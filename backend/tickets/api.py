@@ -101,6 +101,9 @@ def redeem_ticket(request, code: str, payload: RedeemIn):
             )
             raise HttpError(409, reason)
 
+        if timezone.localdate() > ticket.valid_until:
+            raise HttpError(409, "Esta entrada es de una temporada que ya terminó.")
+
         now = timezone.now()
         ticket.status = "REDEEMED"
         ticket.redeemed_at = now

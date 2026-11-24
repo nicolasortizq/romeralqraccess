@@ -150,6 +150,28 @@ def test_redeem_refunded_after_redemption_ticket_returns_409_with_reason(
     assert "reembols" in resp.json()["detail"].lower()
 
 
+@pytest.mark.django_db
+def test_redeem_ticket_past_valid_until_returns_409(client, active_terminal_key):
+    season = make_season(ends_on="2020-01-31")
+    make_online_ticket(
+        code_hash=hash_code("VR1ABC"),
+        status="VALID",
+        season=season,
+        valid_until=season.ends_on,
+    )
+    resp = client.post(
+        "/api/v1/tickets/VR1ABC/redeem",
+        data={"terminal": "Acceso 1", "redeemed_by": "cajero1"},
+        content_type="application/json",
+        headers={"X-Terminal-Key": active_terminal_key},
+    )
+    assert resp.status_code == 409
+    assert "temporada" in resp.json()["detail"].lower()
+
+    ticket = OnlineTicket.objects.get(code_hash=hash_code("VR1ABC"))
+    assert ticket.status != "REDEEMED"
+
+
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_redeem_requests_only_one_succeeds():
     # transaction=True disables the test's wrapping transaction, so the
