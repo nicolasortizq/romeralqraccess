@@ -95,8 +95,14 @@ def create_ticket_from_order(order: dict, send_email: bool = True) -> OnlineTick
 
     season = Season.objects.filter(is_active=True).first()
     if season is None:
-        # Not expected in production -- there should always be exactly one
-        # active season -- but fail loudly rather than guess a season.
+        # Not expected in production -- a database constraint allows at most
+        # one active season -- but fail loudly rather than guess a season,
+        # and leave a log line: the webhook's 500 is invisible to us
+        # otherwise, and WooCommerce will keep retrying this order.
+        logger.error(
+            "No active Season; refusing to create a ticket for order %s",
+            order_id,
+        )
         raise ValueError(
             f"No hay temporada activa; no se puede crear la entrada del "
             f"pedido {order_id}."
@@ -235,6 +241,15 @@ def woocommerce_webhook(request) -> HttpResponse:
     raw_body = request.body
     signature = request.headers.get("X-WC-Webhook-Signature", "")
     if not verify_wc_signature(raw_body, signature):
+        # Logged, not silent: a rejected signature is either a
+        # misconfigured secret (every real order is being dropped) or
+        # someone probing the endpoint. Both need to be visible.
+        logger.warning(
+            "Rejected WooCommerce webhook: invalid signature (header %s, "
+            "%d bytes of body)",
+            "present" if signature else "missing",
+            len(raw_body),
+        )
         return JsonResponse({"detail": "Firma inválida."}, status=401)
 
     try:

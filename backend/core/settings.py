@@ -134,6 +134,88 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# collectstatic writes here, and deploy/nginx.conf serves this directory
+# directly as /static/ (alias /srv/romeral/app/backend/staticfiles/). The two
+# paths must stay in step: if one changes, change the other.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+# Behind Nginx (deploy/nginx.conf), the TLS connection terminates at the
+# proxy, so Django only sees plain HTTP. Without these two settings
+# request.is_secure() is False and the admin's CSRF check rejects every POST
+# from https://acceso.vallederomeral.cl as a cross-origin referer.
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        'DJANGO_CSRF_TRUSTED_ORIGINS', 'https://acceso.vallederomeral.cl'
+    ).split(',')
+    if origin.strip()
+]
+
+
+# Logging
+# https://docs.djangoproject.com/en/6.1/topics/logging/
+#
+# Several already-shipped behaviours only report through a log line and
+# nowhere else: a failed ticket email, a rejected webhook signature, a
+# missing active season, an invoice report the gate could not deliver. With
+# no LOGGING config those go to Django's last-resort handler and are
+# effectively lost, so the `tickets` logger gets an explicit rotating file
+# handler. RotatingFileHandler (not a plain FileHandler) so the file cannot
+# grow without bound on a VPS with no logrotate rule for it.
+# TODO: deploy/'s own shell logs (reconcile_orders.log, backup_db.log) are
+# still unrotated; add a logrotate drop-in for /var/log/romeral/ when the
+# VPS is provisioned.
+
+LOG_DIR = Path(os.environ.get('DJANGO_LOG_DIR', BASE_DIR / 'logs'))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'tickets_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'tickets.log'),
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'django_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': str(LOG_DIR / 'django.log'),
+            'maxBytes': 5 * 1024 * 1024,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'tickets': {
+            'handlers': ['console', 'tickets_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console', 'django_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
