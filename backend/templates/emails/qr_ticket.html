@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu entrada - Valle del Romeral</title>
+</head>
+<body style="margin:0;padding:0;background-color:#EDF3F8;">
+
+<!-- ================================================================
+     correo con QR enviado al comprador cuando WooCommerce notifica un
+     pedido pagado. Ported from the approved mock/frames/correo_qr.html
+     (Task 2). Layout de tablas, estilos en linea unicamente, compatible
+     con clientes de correo.
+     ================================================================ -->
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EDF3F8;">
+  <tr>
+    <td align="center" style="padding:24px 12px;">
+
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;border-radius:8px;overflow:hidden;">
+
+        <!-- Encabezado -->
+        <tr>
+          <td align="center" style="background-color:#102F52;padding:28px 20px;">
+            <div style="font-family:Arial, Helvetica, sans-serif;font-size:24px;font-weight:bold;color:#FFFFFF;letter-spacing:1px;">
+              VALLE DEL ROMERAL
+            </div>
+            <div style="font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#BED1E4;margin-top:4px;">
+              Centro Turístico
+            </div>
+          </td>
+        </tr>
+
+        <!-- Saludo -->
+        <tr>
+          <td style="padding:28px 32px 8px 32px;font-family:Arial, Helvetica, sans-serif;">
+            <div style="font-size:19px;color:#17385C;font-weight:bold;">
+              ¡Tu entrada está lista, {{ buyer_first_name }}!
+            </div>
+            <div style="font-size:14px;color:#41536B;line-height:20px;margin-top:8px;">
+              Gracias por tu compra. Guarda este correo: tu código QR es tu entrada al recinto.
+            </div>
+          </td>
+        </tr>
+
+        <!-- QR -->
+        <tr>
+          <td align="center" style="padding:20px 32px 8px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F6FC;border-radius:8px;">
+              <tr>
+                <td align="center" style="padding:24px;">
+                  <img src="{{ qr_data_uri }}"
+                       width="260" height="260" alt="Código QR de tu entrada"
+                       style="display:block;border:0;width:260px;height:260px;background-color:#FFFFFF;border:1px solid #CBD9EA;">
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Instrucción -->
+        <tr>
+          <td align="center" style="padding:4px 32px 4px 32px;font-family:Arial, Helvetica, sans-serif;">
+            <div style="font-size:15px;color:#102F52;font-weight:bold;">
+              Muestra este código en el acceso.
+            </div>
+          </td>
+        </tr>
+
+        <!-- Datos de la entrada -->
+        <tr>
+          <td style="padding:24px 32px 8px 32px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+              <tr>
+                <td style="padding:10px 14px;background-color:#F1F6FC;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#66778B;width:50%;">
+                  Número de pedido
+                </td>
+                <td style="padding:10px 14px;background-color:#F1F6FC;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:14px;color:#17385C;font-weight:bold;text-align:right;">
+                  #{{ order_number }}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 14px;background-color:#FFFFFF;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#66778B;">
+                  Cantidad de personas
+                </td>
+                <td style="padding:10px 14px;background-color:#FFFFFF;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:14px;color:#17385C;font-weight:bold;text-align:right;">
+                  {{ people_label }}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 14px;background-color:#F1F6FC;font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#66778B;">
+                  Vigencia
+                </td>
+                <td style="padding:10px 14px;background-color:#F1F6FC;font-family:Arial, Helvetica, sans-serif;font-size:14px;color:#17385C;font-weight:bold;text-align:right;">
+                  Válida toda la temporada, hasta el {{ valid_until_label }}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Nota -->
+        <tr>
+          <td style="padding:16px 32px 28px 32px;font-family:Arial, Helvetica, sans-serif;">
+            <div style="font-size:12px;color:#8A4B00;background-color:#FFF0CF;border-radius:6px;padding:12px 14px;line-height:18px;">
+              Esta entrada se canjea una sola vez, para todas las personas indicadas. No es necesario imprimirla: basta con mostrar el código desde tu teléfono.
+            </div>
+          </td>
+        </tr>
+
+        <!-- Pie -->
+        <tr>
+          <td align="center" style="background-color:#F1F6FC;padding:16px 32px;font-family:Arial, Helvetica, sans-serif;font-size:11px;color:#8A99AC;">
+            Valle del Romeral · Este correo fue generado automáticamente, por favor no respondas a esta dirección.
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
