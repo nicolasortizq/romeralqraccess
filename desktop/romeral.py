@@ -24,6 +24,7 @@ from conciliacion_dte import preparar as preparar_conciliacion
 import ventas_online
 from canje_online import CanjeOnlineController
 from tipos_venta import TIPO_VENTA_ONLINE
+from cierre_caja import calcular_resumen_cierre
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
@@ -1179,20 +1180,15 @@ class Romeral(tk.Tk):
   contado=tk.StringVar()
   tk.Entry(fila,textvariable=contado,font=('Arial',16),justify='right',width=18).pack(side='right')
   def resumen():
-   rows=conn.execute("SELECT id,fecha,tipo,medio,cantidad,total,estado_boleta,folio_dte FROM ventas WHERE substr(fecha,1,10)=? AND estado_boleta != 'ANULADA_PRUEBA' ORDER BY id",(fecha,)).fetchall()
-   medios={m:sum(int(r[5]) for r in rows if r[3]==m) for m in PAYMENTS}
-   tipos={}
-   for _,_,tipo,medio,personas,total,_,_ in rows:
-    tipo=nombre_visible(tipo)
-    a=tipos.setdefault(tipo,{'personas':0,'total':0,'ventas':0})
-    a['personas']+=int(personas);a['total']+=int(total);a['ventas']+=1
-   return rows,medios,tipos,len(rows),sum(int(r[4]) for r in rows),sum(int(r[5]) for r in rows)
+   r=calcular_resumen_cierre(conn,fecha)
+   return r['rows'],r['medios'],r['presencial'],r['ventas'],r['personas'],r['total'],r['online']
   def refrescar():
-   rows,medios,tipos,ventas,personas,total=resumen()
+   rows,medios,tipos,ventas,personas,total,online=resumen()
    cierre=conn.execute('SELECT creado,efectivo_contado,diferencia FROM cierres_caja WHERE fecha=?',(fecha,)).fetchone()
    estado=(f'CERRADO el {cierre[0]} · Efectivo contado {pesos(cierre[1])} · Diferencia {pesos(cierre[2])}' if cierre else 'ABIERTO · Cierre obligatorio antes de la próxima jornada')
    detalle='\n'.join(f'  {k}: {v["personas"]} personas · {v["ventas"]} ventas · {pesos(v["total"])}' for k,v in sorted(tipos.items())) or '  Sin ventas'
-   info.set(f'ESTADO: {estado}\n\nVENTAS: {ventas}     PERSONAS: {personas}\nRECAUDACIÓN TOTAL: {pesos(total)}\n\nEFECTIVO ESPERADO: {pesos(medios["Efectivo"])}\nWEBPAY: {pesos(medios["Webpay"])}\nTARJETA: {pesos(medios["Tarjeta"])}\n\nPOR SERVICIO:\n{detalle}\n\nSe guarda detalle inmutable de operaciones al cierre.')
+   online_linea=f'  Online: {online["personas"]} personas · {online["boletas"]} boletas · {pesos(online["total"])}' if online['boletas'] else '  Sin canjes online'
+   info.set(f'ESTADO: {estado}\n\nVENTAS: {ventas}     PERSONAS: {personas}\nRECAUDACIÓN TOTAL: {pesos(total)}\n\nEFECTIVO ESPERADO: {pesos(medios["Efectivo"])}\nWEBPAY: {pesos(medios["Webpay"])}\nTARJETA: {pesos(medios["Tarjeta"])}\n\nPOR SERVICIO:\n{detalle}\n\nONLINE (no suma a efectivo esperado):\n{online_linea}\n\nSe guarda detalle inmutable de operaciones al cierre.')
   def cerrar():
    if conn.execute('SELECT 1 FROM cierres_caja WHERE fecha=?',(fecha,)).fetchone():
     messagebox.showwarning('Ya cerrado','Esta jornada ya tiene cierre. Puedes reimprimirlo.',parent=win);return
@@ -1202,7 +1198,7 @@ class Romeral(tk.Tk):
    efectivo=int(entrada)
    if efectivo>1000000000:
     messagebox.showwarning('Monto','Revisa el efectivo contado.',parent=win);return
-   rows,medios,tipos,ventas,personas,total=resumen()
+   rows,medios,tipos,ventas,personas,total,online=resumen()
    diferencia=efectivo-medios['Efectivo']
    if not self.autorizar_supervisor():return
    if not messagebox.askyesno('Confirmar cierre definitivo',f'Jornada: {fecha}\nVentas: {ventas}\nTotal: {pesos(total)}\nEfectivo esperado: {pesos(medios["Efectivo"])}\nContado: {pesos(efectivo)}\nDiferencia: {pesos(diferencia)}\n\nCierre único e irreversible. ¿Confirmas?',parent=win):return
@@ -1214,7 +1210,7 @@ class Romeral(tk.Tk):
     with sqlite3.connect(backup) as copia:conn.backup(copia)
     # Releer dentro de la transacción para evitar cierre con cifras obsoletas.
     with conn:
-     nuevos=conn.execute("SELECT id,fecha,tipo,medio,cantidad,total,estado_boleta,folio_dte FROM ventas WHERE substr(fecha,1,10)=? AND estado_boleta != 'ANULADA_PRUEBA' ORDER BY id",(fecha,)).fetchall()
+     nuevos=calcular_resumen_cierre(conn,fecha)['rows']
      if nuevos!=rows:raise ValueError('Las operaciones cambiaron. Actualiza el resumen y vuelve a intentar.')
      conn.execute('INSERT INTO cierres_caja(fecha,creado,efectivo_esperado,efectivo_contado,diferencia,webpay,tarjeta,total,personas,ventas,desglose_json) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
       (fecha,datetime.now().isoformat(timespec='seconds'),medios['Efectivo'],efectivo,diferencia,medios['Webpay'],medios['Tarjeta'],total,personas,ventas,json.dumps(tipos,ensure_ascii=False)))
