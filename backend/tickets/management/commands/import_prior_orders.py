@@ -10,7 +10,14 @@ window has no OnlineTicket yet because no webhook was ever delivered for
 it. Run once by hand, after WooCommerce API keys exist (external
 blocker -- see docs/PROYECTO.md):
 
-    python manage.py import_prior_orders --season-id=<id> [--send-email]
+    python manage.py import_prior_orders --season-id=<id> --send-email
+
+Choosing between --send-email and --no-email is mandatory: a ticket whose
+email is never sent is permanently unredeemable. The plaintext QR code is
+generated, hashed and discarded, so neither the backend nor the gate can
+recover it -- there is no "redeem by order number" path. --no-email exists
+only for the case where the operator has already delivered the codes some
+other way, or is deliberately importing tickets nobody will use.
 
 create_ticket_from_order (tickets/webhooks.py, Task 12) is called
 directly rather than re-implemented here, for the same reason
@@ -59,18 +66,38 @@ class Command(BaseCommand):
             help="Id of the Season being backfilled; its starts_on date "
             "scopes which WooCommerce orders are fetched.",
         )
-        parser.add_argument(
+        # No default on purpose: see the module docstring. Defaulting
+        # either way is wrong -- defaulting to off silently creates
+        # unredeemable tickets, defaulting to on silently emails every
+        # past buyer. The operator has to say which one they mean.
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
             "--send-email",
             action="store_true",
             default=False,
-            help="Also send the ticket email to each buyer. Omitted by "
-            "default: a bulk historical import should not surprise "
-            "buyers with an email long after their purchase.",
+            help="Send each buyer their QR email. This is normally what you "
+            "want: it is the only way the buyer ever receives the code.",
+        )
+        group.add_argument(
+            "--no-email",
+            action="store_true",
+            default=False,
+            help="Create the tickets without emailing anyone. The QR codes "
+            "are then unrecoverable and the tickets can never be redeemed "
+            "(only the hash is stored, and the gate redeems by code, not by "
+            "order number). Use only if the codes are being delivered some "
+            "other way.",
         )
 
     def handle(self, *args, **options):
         season_id = options["season_id"]
         send_email = options["send_email"]
+        if not send_email:
+            self.stderr.write(
+                "Aviso: --no-email. Las entradas creadas no se podran "
+                "canjear nunca, porque el codigo QR no se guarda en "
+                "ninguna parte (solo su hash)."
+            )
 
         season = Season.objects.filter(id=season_id).first()
         if season is None:

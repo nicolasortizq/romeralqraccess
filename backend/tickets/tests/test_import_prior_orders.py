@@ -36,20 +36,22 @@ def test_import_creates_tickets_for_unused_paid_orders(mock_woocommerce_client, 
         sample_order_dict(order_id=order_id)
     ]
 
-    call_command("import_prior_orders", season_id=season.id)
+    call_command("import_prior_orders", season_id=season.id, no_email=True)
 
     ticket = OnlineTicket.objects.get(woo_order_id=order_id)
     assert ticket.source == "IMPORT"
 
 
 @pytest.mark.django_db
-def test_import_does_not_email_by_default(mock_woocommerce_client, season, mailoutbox):
+def test_import_does_not_email_when_no_email_is_passed(
+    mock_woocommerce_client, season, mailoutbox
+):
     order_id = next(_order_id_counter)
     mock_woocommerce_client.list_paid_orders.return_value = [
         sample_order_dict(order_id=order_id)
     ]
 
-    call_command("import_prior_orders", season_id=season.id)
+    call_command("import_prior_orders", season_id=season.id, no_email=True)
 
     assert len(mailoutbox) == 0
 
@@ -83,7 +85,7 @@ def test_import_skips_orders_that_already_have_a_ticket(mock_woocommerce_client,
         sample_order_dict(order_id=order_id)
     ]
 
-    call_command("import_prior_orders", season_id=season.id)
+    call_command("import_prior_orders", season_id=season.id, no_email=True)
 
     assert OnlineTicket.objects.filter(woo_order_id=order_id).count() == 1
 
@@ -95,8 +97,8 @@ def test_import_is_idempotent_across_two_runs(mock_woocommerce_client, season):
         sample_order_dict(order_id=order_id)
     ]
 
-    call_command("import_prior_orders", season_id=season.id)
-    call_command("import_prior_orders", season_id=season.id)
+    call_command("import_prior_orders", season_id=season.id, no_email=True)
+    call_command("import_prior_orders", season_id=season.id, no_email=True)
 
     assert OnlineTicket.objects.filter(woo_order_id=order_id).count() == 1
 
@@ -104,15 +106,15 @@ def test_import_is_idempotent_across_two_runs(mock_woocommerce_client, season):
 @pytest.mark.django_db
 def test_import_rejects_unknown_season_id(mock_woocommerce_client):
     with pytest.raises(CommandError):
-        call_command("import_prior_orders", season_id=999999)
+        call_command("import_prior_orders", season_id=999999, no_email=True)
 
     mock_woocommerce_client.list_paid_orders.assert_not_called()
 
 
 @pytest.mark.django_db
-def test_import_passes_send_email_false_by_default(mock_woocommerce_client, season):
+def test_import_passes_send_email_false_with_no_email(mock_woocommerce_client, season):
     """Proves the command actually calls create_ticket_from_order with
-    send_email=False when --send-email is absent -- not merely that no
+    send_email=False when --no-email is passed -- not merely that no
     email happens to be observed, which could pass for unrelated reasons
     (e.g. tickets.emails being unavailable)."""
     order_id = next(_order_id_counter)
@@ -124,7 +126,7 @@ def test_import_passes_send_email_false_by_default(mock_woocommerce_client, seas
         "tickets.management.commands.import_prior_orders.create_ticket_from_order"
     ) as mock_create:
         mock_create.return_value = Mock(source="WEBHOOK")
-        call_command("import_prior_orders", season_id=season.id)
+        call_command("import_prior_orders", season_id=season.id, no_email=True)
 
     mock_create.assert_called_once()
     _, kwargs = mock_create.call_args
@@ -144,7 +146,7 @@ def test_import_rejects_season_id_that_is_not_the_active_season(mock_woocommerce
     make_season(name="2027-2028", starts_on="2027-11-20", ends_on="2028-02-28", is_active=True)
 
     with pytest.raises(CommandError):
-        call_command("import_prior_orders", season_id=season.id)
+        call_command("import_prior_orders", season_id=season.id, no_email=True)
 
     mock_woocommerce_client.list_paid_orders.assert_not_called()
     assert OnlineTicket.objects.filter(season=season).count() == 0
@@ -166,3 +168,17 @@ def test_import_passes_send_email_true_when_flag_passed(mock_woocommerce_client,
     mock_create.assert_called_once()
     _, kwargs = mock_create.call_args
     assert kwargs["send_email"] is True
+
+
+@pytest.mark.django_db
+def test_import_refuses_to_run_without_an_explicit_email_choice(
+    mock_woocommerce_client, season
+):
+    """Neither default is safe: off silently creates tickets nobody can
+    ever redeem (the plaintext code is discarded), on silently emails
+    every past buyer. The operator must say which one they mean."""
+    with pytest.raises(CommandError):
+        call_command("import_prior_orders", season_id=season.id)
+
+    mock_woocommerce_client.list_paid_orders.assert_not_called()
+    assert OnlineTicket.objects.count() == 0
