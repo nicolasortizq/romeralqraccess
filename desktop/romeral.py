@@ -21,7 +21,6 @@ from recuperacion_pdf import recuperar
 from recuperacion_automatica import recuperar_con_espera
 from registro_dte import crear_tabla as crear_control_emision, registrar_venta as registrar_control_emision
 from conciliacion_dte import preparar as preparar_conciliacion
-from ventas_online import preparar as preparar_qr, registrar as registrar_qr, buscar as buscar_qr, estadisticas as estadisticas_qr
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
@@ -81,7 +80,6 @@ conn.execute('''CREATE TABLE IF NOT EXISTS cierre_operaciones (
 conn.execute("INSERT OR IGNORE INTO config VALUES ('precio','12000')")
 conn.execute("INSERT OR IGNORE INTO config VALUES ('precio_temperada','12000')")
 conn.execute("INSERT OR IGNORE INTO config VALUES ('rut_empresa','78.180.502-5')")
-preparar_qr(conn)
 conn.commit()
 
 def pesos(n): return '$' + f'{int(n):,}'.replace(',', '.')
