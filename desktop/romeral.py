@@ -21,6 +21,8 @@ from recuperacion_pdf import recuperar
 from recuperacion_automatica import recuperar_con_espera
 from registro_dte import crear_tabla as crear_control_emision, registrar_venta as registrar_control_emision
 from conciliacion_dte import preparar as preparar_conciliacion
+import ventas_online
+from canje_online import CanjeOnlineController
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
@@ -54,6 +56,12 @@ conn.execute('''CREATE TABLE IF NOT EXISTS auditoria_precios (
 cols = {r[1] for r in conn.execute('PRAGMA table_info(ventas)')}
 if 'tipo' not in cols:
  conn.execute("ALTER TABLE ventas ADD COLUMN tipo TEXT NOT NULL DEFAULT 'Entrada General'")
+# Marca el origen de la venta: 'PRESENCIAL' (caja) u 'ONLINE' (canje de entrada
+# QR comprada en la web). Las filas históricas quedan como 'PRESENCIAL' por el
+# DEFAULT; el cierre de caja (Task 20) filtra por esta columna para mostrar
+# los canjes online en su propia línea, sin sumarlos al efectivo esperado.
+if 'origen' not in cols:
+ conn.execute("ALTER TABLE ventas ADD COLUMN origen TEXT NOT NULL DEFAULT 'PRESENCIAL'")
 # Campos de seguimiento tributario: nunca se inventa un folio.
 for nombre, definicion in (
  ('referencia_venta', 'TEXT'),
@@ -128,6 +136,10 @@ class Romeral(tk.Tk):
   self.estado_folios=tk.StringVar(value='Folios DTE39: sin consultar')
   self.payment_widgets = {}
   self.intentos_clave = 0
+  # Identifican esta terminal ante el backend al canjear una entrada online
+  # (docs/api/openapi.yaml: redeem toma terminal + redeemed_by por separado).
+  self.terminal_nombre = config('acceso_terminal_nombre') or 'acceso-1'
+  self.operador_actual = config('acceso_terminal_operador') or os.environ.get('USERNAME') or os.environ.get('USER') or 'operador'
   self._aviso_cierre_fecha = None
   self.cantidad.trace_add('write', lambda *_: self.actualizar_total())
   self.monto_alojamiento.trace_add('write', lambda *_: self.actualizar_total())
@@ -659,9 +671,13 @@ class Romeral(tk.Tk):
   self._aviso_cierre_fecha=None
   return True
 
- def registrar(self):
-  # No registrar una venta de caja que no pueda intentar emitir el DTE.
-  # El bloqueo se comprueba ANTES de escribir en SQLite.
+ def verificar_condiciones_emision(self):
+  """Condiciones compartidas antes de registrar cualquier venta que vaya a emitir DTE.
+
+  Usado por `registrar()` (venta presencial) y por el canje de entradas online
+  (`CanjeOnlineController`, vía `panel_qr_online`). El bloqueo se comprueba
+  ANTES de escribir en SQLite.
+  """
   try:
    from validacion_produccion import CONFIG as CONFIG_PRODUCCION
    import json as _json
@@ -673,7 +689,7 @@ class Romeral(tk.Tk):
    messagebox.showwarning('Emisión electrónica deshabilitada',
     'No se registró ninguna venta. La emisión DTE 39 continúa bloqueada en la configuración de producción.\n\n'
     'No habilites producción hasta autorizar la primera emisión real.',parent=self)
-   return
+   return False
   # No admitir nuevas ventas cuando exista un envío tributario sin resultado definitivo.
   # El cajero debe conciliarlo con Facturacion.com antes de continuar.
   try:
@@ -685,8 +701,12 @@ class Romeral(tk.Tk):
     f'La venta {_pendiente[0]} tiene un envío SOAP en estado {_pendiente[1]}.\n\n'
     'No se puede registrar otra venta hasta comprobar su estado en Facturacion.com.\n'
     'No repitas la emisión ni modifiques manualmente el folio.',parent=self)
-   return
-  if not self.comprobar_jornada():return
+   return False
+  if not self.comprobar_jornada():return False
+  return True
+
+ def registrar(self):
+  if not self.verificar_condiciones_emision():return
   if not self.medio.get():
    messagebox.showwarning('Medio de pago','Selecciona Efectivo, Webpay o Tarjeta antes de registrar la venta.',parent=self);return
   if self.emision_en_curso:
@@ -719,6 +739,35 @@ class Romeral(tk.Tk):
   nueva_id=cursor.lastrowid
   self.limpiar();self.monto_alojamiento.set('0');self.monto_visible.set('$0');self.reiniciar_pago();self.campo_cantidad.focus_set();self.actualizar_resumen();self.estado.set(f'Venta {nueva_id}: {pesos(total)} · BOLETA PENDIENTE')
   self.emitir_automaticamente(nueva_id,total)
+
+ def registrar_venta_online(self, total, cantidad):
+  """Inserta la venta de un canje de entrada online ya confirmado por el backend.
+
+  Medio siempre Webpay (regla del negocio: toda entrada online se pagó por
+  Webpay en la web) y origen 'ONLINE' para que el cierre de caja (Task 20)
+  la muestre en su propia línea sin sumarla al efectivo esperado. El resto
+  del flujo (control de emisión, evento de auditoría) replica `registrar()`.
+  """
+  with conn:
+   cursor=conn.execute(
+    "INSERT INTO ventas(fecha,cantidad,precio,total,medio,tipo,estado_boleta,referencia_venta,tipo_dte,origen) VALUES (?,?,?,?,?,?,?,?,?,?)",
+    (datetime.now().isoformat(timespec='seconds'),cantidad,total//max(cantidad,1),total,'Webpay','Entrada Online','PENDIENTE_INTEGRACION',str(uuid.uuid4()),39,'ONLINE'))
+   referencia=conn.execute('SELECT referencia_venta FROM ventas WHERE id=?',(cursor.lastrowid,)).fetchone()[0]
+   registrar_control_emision(conn,cursor.lastrowid,referencia)
+   conn.execute('INSERT INTO eventos_dte(venta_id,fecha,evento,detalle) VALUES (?,?,?,?)',
+    (cursor.lastrowid,datetime.now().isoformat(timespec='seconds'),'VENTA_REGISTRADA','Canje de entrada online; pendiente de emisión electrónica controlada'))
+  return cursor.lastrowid
+
+ def consultar_resultado_emision(self, venta_id):
+  """Lee el folio y estado de boleta actuales de una venta, sin bloquear.
+
+  Usado para sondear el resultado de `emitir_automaticamente()` (asíncrono,
+  resuelto en un hilo propio) una vez que `emision_en_curso` vuelve a False.
+  """
+  fila=conn.execute('SELECT folio_dte,estado_boleta FROM ventas WHERE id=?',(venta_id,)).fetchone()
+  if not fila:
+   return None,None
+  return fila[0],fila[1]
 
  def emitir_automaticamente(self, venta_id, total):
   """Un solo intento SOAP por venta, sin confirmaciones adicionales ni reenvíos."""
@@ -982,52 +1031,122 @@ class Romeral(tk.Tk):
    tk.Button(win,text='VER EJEMPLO LOCAL DE BOLETA $10.000',command=vista_previa,font=('Arial',12,'bold'),pady=9).pack(fill='x',padx=20,pady=(0,18))
 
  def panel_qr_online(self):
-  """Fase 1: lector USB tipo teclado / ingreso manual y registro sin emisión.
+  """Canje de una entrada online comprada en la web (QR o ingreso manual).
 
-  TODO(task-19): esta pantalla aun depende de nombres (estadisticas_qr,
-  buscar_qr, registrar_qr) que seran reconectados al nuevo modulo online.
-  El try/except de abajo es solo para que abrir la pantalla no reviente
-  con una excepcion sin manejar mientras eso se resuelve.
+  Dos pasos, igual que mock/frames/canje_online.html: BUSCAR ENTRADA
+  (ventas_online.lookup_ticket, solo lectura) muestra el estado y los
+  datos de la entrada; CANJEAR Y EMITIR BOLETA (CanjeOnlineController,
+  mismo módulo que respalda sus tests) hace el canje real en el backend
+  y dispara la emisión de la boleta por la ruta ya existente de
+  emitir_automaticamente().
   """
+  controller=CanjeOnlineController(self)
+  # Holds the last lookup so the redeem button acts on exactly what is on
+  # screen, not on whatever is currently typed in the entry field.
+  estado={'ticket':None,'code':None,'habilitado':False}
   win=tk.Toplevel(self)
-  try:
-   win.title('ROMERAL | Ventas Online · Validación QR')
-   win.geometry('780x650');win.minsize(680,560);win.configure(bg='#EDF3F8')
-   tk.Label(win,text='VENTAS ONLINE · CÓDIGO QR',bg='#102F52',fg='white',
-            font=('Arial',21,'bold'),pady=20).pack(fill='x')
-   tk.Label(win,text='ETAPA DE PREINTEGRACIÓN · SIN CONEXIÓN A LA WEB',bg='#FFF0CF',fg='#744300',
-            font=('Arial',11,'bold'),pady=10).pack(fill='x')
-   zona=tk.Frame(win,bg='white',padx=25,pady=20);zona.pack(fill='both',expand=True,padx=18,pady=16)
-   tk.Label(zona,text='Escanea el QR con un lector USB o ingresa su código:',bg='white',fg='#102F52',font=('Arial',12,'bold')).pack(anchor='w')
-   codigo=tk.StringVar()
-   entrada=tk.Entry(zona,textvariable=codigo,font=('Arial',17),width=48)
-   entrada.pack(fill='x',pady=(10,12));entrada.focus_set()
-   resultado=tk.StringVar(value='Aún no se ha registrado ningún código en esta consulta.')
-   tk.Label(zona,textvariable=resultado,bg='#EDF3F8',fg='#17385C',justify='left',anchor='nw',
-            font=('Arial',12),wraplength=660,padx=16,pady=18).pack(fill='both',expand=True,pady=(12,12))
-   def escanear(event=None):
-    try:
-     previo=buscar_qr(conn,codigo.get())
-     fila=previo or registrar_qr(conn,codigo.get())
-    except (ValueError,sqlite3.Error) as exc:
-     messagebox.showwarning('Código QR',str(exc),parent=win);return
-    ident,mascara,pedido,fecha_visita,cantidad,monto,estado,pago_ok,doc_ok,folio,fecha_registro=fila
-    resultado.set(f'QR registrado: #{ident}\nCódigo: {mascara}\nPrimer registro: {fecha_registro}\n\n'
-       + ('ATENCIÓN: código ya registrado anteriormente.\n\n' if previo else 'Nuevo código guardado localmente.\n\n')
-       + f'Estado: {estado}\nPedido: {pedido or "No consultado"}\nPago: NO VERIFICADO\nBoleta: NO VERIFICADA\n\n'
-       + 'EMITIR BOLETA: BLOQUEADO hasta conectar una API segura de pedidos y verificar el documento en Facturacion.com.')
-    entrada.select_range(0,'end');entrada.focus_set()
-   self.boton_color(zona,'ESCANEAR / REGISTRAR QR',escanear,'#19705B',size=12,alto=58).pack(fill='x')
-   entrada.bind('<Return>',escanear)
-   tk.Label(zona,text='EMITIR BOLETA ELECTRÓNICA · PENDIENTE DE VALIDACIÓN',bg='#AAB3BE',fg='white',
-            font=('Arial',11,'bold'),pady=15).pack(fill='x',pady=(12,0))
-   total,pendientes=estadisticas_qr(conn)
-   tk.Label(zona,text=f'QR registrados localmente: {total or 0} · Pendientes de verificación: {pendientes or 0}',
-            bg='white',fg='#5C7187',font=('Arial',10)).pack(anchor='w',pady=(12,0))
-  except Exception:
-   win.destroy()
-   messagebox.showwarning('Ventas Online QR',
-    'Pantalla en actualización, vuelve a intentarlo más tarde.',parent=self)
+  win.title('ROMERAL | Canje de entrada online')
+  win.geometry('820x700');win.minsize(700,600);win.configure(bg='#EDF3F8')
+  tk.Label(win,text='CANJE DE ENTRADA ONLINE · QR',bg='#102F52',fg='white',
+           font=('Arial',21,'bold'),pady=20).pack(fill='x')
+  zona=tk.Frame(win,bg='#EDF3F8',padx=18,pady=16);zona.pack(fill='both',expand=True)
+
+  panel_entrada=tk.Frame(zona,bg='white',padx=24,pady=20);panel_entrada.pack(fill='x',pady=(0,16))
+  tk.Label(panel_entrada,text='Escanea el código QR o ingrésalo manualmente:',bg='white',fg='#102F52',
+           font=('Arial',12,'bold')).pack(anchor='w')
+  codigo=tk.StringVar()
+  fila_entrada=tk.Frame(panel_entrada,bg='white');fila_entrada.pack(fill='x',pady=(10,0))
+  entrada=tk.Entry(fila_entrada,textvariable=codigo,font=('Arial',17),width=36)
+  entrada.pack(side='left',fill='x',expand=True);entrada.focus_set()
+  self.boton_color(fila_entrada,'BUSCAR ENTRADA',lambda:buscar(),'#06499A',size=12,alto=50).pack(side='left',padx=(14,0))
+
+  banner_var=tk.StringVar(value='')
+  banner_label=tk.Label(zona,textvariable=banner_var,justify='left',anchor='w',
+                         font=('Arial',15,'bold'),padx=22,pady=16,wraplength=740)
+
+  tarjeta=tk.Frame(zona,bg='white',padx=24,pady=20)
+  tarjeta_var=tk.StringVar(value='')
+  tk.Label(tarjeta,textvariable=tarjeta_var,bg='white',fg='#17385C',justify='left',anchor='nw',
+           font=('Arial',13)).pack(anchor='w')
+
+  def canjear_click():
+   if not estado['habilitado'] or not estado['code']:
+    return
+   mensaje=controller.canjear(estado['code'])
+   messagebox.showinfo('Canje de entrada',mensaje,parent=win)
+   # Re-read the ticket so the screen reflects the real post-redeem state
+   # (REDEEMED, folio pending/confirmed) instead of guessing it locally.
+   mostrar_ticket(estado['code'],_lookup_seguro(estado['code']))
+
+  boton_canjear=self.boton_color(zona,'CANJEAR Y EMITIR BOLETA',canjear_click,'#AAB3BE',size=14,alto=66,fg='#E7EAEE')
+  boton_canjear.pack(fill='x')
+
+  def habilitar_boton(habilitado):
+   estado['habilitado']=habilitado
+   boton_canjear._romeral_color='#19705B' if habilitado else '#AAB3BE'
+   boton_canjear._romeral_fg='white' if habilitado else '#E7EAEE'
+   boton_canjear.redibujar()
+
+  def _lookup_seguro(code):
+   try:
+    return ventas_online.lookup_ticket(code)
+   except Exception as exc:
+    messagebox.showwarning('Ventas online',
+     f'No se pudo consultar el backend: {type(exc).__name__}. Revisa la conexión e inténtalo de nuevo.',parent=win)
+    return None
+
+  def mostrar_ticket(code,ticket):
+   estado['code']=code;estado['ticket']=ticket
+   tarjeta.pack_forget()
+   if ticket is None:
+    banner_var.set('CÓDIGO NO ENCONTRADO\nNo existe ninguna entrada con ese código. Revisa el escaneo.')
+    banner_label.configure(bg='#FBE0E0',fg='#B42332')
+    habilitar_boton(False)
+    banner_label.pack(fill='x',pady=(0,16),before=boton_canjear)
+    return
+   status=ticket.get('status')
+   fuera_temporada=ticket.get('display_status')=='fuera de temporada'
+   if fuera_temporada:
+    banner_var.set(f'FUERA DE TEMPORADA\nVenció el {ticket.get("valid_until")}. No se puede canjear.')
+    banner_label.configure(bg='#E8E8EC',fg='#41536B')
+    puede=False
+   elif status=='VALID':
+    banner_var.set('ENTRADA VÁLIDA\nLista para canjear. Verifica los datos antes de confirmar.')
+    banner_label.configure(bg='#DDF0E6',fg='#19705B')
+    puede=True
+   elif status=='REDEEMED':
+    banner_var.set(f'YA CANJEADA\n{ticket.get("redeemed_at") or ""} · {ticket.get("redeemed_by") or ""}')
+    banner_label.configure(bg='#FFF0CF',fg='#744300')
+    puede=False
+   elif status=='REFUNDED_AFTER_REDEMPTION':
+    banner_var.set('REEMBOLSADA DESPUÉS DE CANJEADA\nEl pedido fue reembolsado después del canje. No se puede volver a canjear.')
+    banner_label.configure(bg='#FBE0E0',fg='#B42332')
+    puede=False
+   else:
+    banner_var.set('ENTRADA ANULADA\nEl pedido fue reembolsado o cancelado en WooCommerce.')
+    banner_label.configure(bg='#FBE0E0',fg='#B42332')
+    puede=False
+   lineas='\n'.join(
+    f"  · {l.get('product_name','')} x{l.get('quantity','?')} · {pesos(l.get('line_total',0))}"
+    for l in ticket.get('lines',[]))
+   tarjeta_var.set(
+    f"Comprador: {ticket.get('buyer_name','')}\n"
+    f"Pedido: #{ticket.get('woo_order_number','')}\n"
+    f"Personas: {ticket.get('people_count','')}\n\n"
+    f"{lineas}\n\n"
+    f"Total pagado · {ticket.get('payment_method','Webpay')}: {pesos(ticket.get('total_paid',0))}")
+   banner_label.pack(fill='x',pady=(0,16),before=boton_canjear)
+   tarjeta.pack(fill='both',expand=True,pady=(0,16),before=boton_canjear)
+   habilitar_boton(puede)
+
+  def buscar(event=None):
+   code=codigo.get().strip()
+   if not code:
+    return
+   mostrar_ticket(code,_lookup_seguro(code))
+   entrada.select_range(0,'end');entrada.focus_set()
+
+  entrada.bind('<Return>',buscar)
 
  def imprimir_cierre_termico(self, fecha, preliminar=False):
   from cierre_termico import crear_pdf_cierre, enviar_pdf_termico
