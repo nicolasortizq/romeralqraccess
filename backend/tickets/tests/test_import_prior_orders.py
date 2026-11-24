@@ -132,6 +132,25 @@ def test_import_passes_send_email_false_by_default(mock_woocommerce_client, seas
 
 
 @pytest.mark.django_db
+def test_import_rejects_season_id_that_is_not_the_active_season(mock_woocommerce_client, season):
+    """--season-id must match the currently active Season. This command
+    is only meant for backfilling the active season (docs/PROYECTO.md
+    5.7); create_ticket_from_order always stamps the active season onto
+    new tickets regardless of --season-id, so a stale --season-id after
+    a season rollover would silently mislabel tickets with the wrong
+    season/valid_until unless this is rejected up front."""
+    season.is_active = False
+    season.save(update_fields=["is_active"])
+    make_season(name="2027-2028", starts_on="2027-11-20", ends_on="2028-02-28", is_active=True)
+
+    with pytest.raises(CommandError):
+        call_command("import_prior_orders", season_id=season.id)
+
+    mock_woocommerce_client.list_paid_orders.assert_not_called()
+    assert OnlineTicket.objects.filter(season=season).count() == 0
+
+
+@pytest.mark.django_db
 def test_import_passes_send_email_true_when_flag_passed(mock_woocommerce_client, season):
     order_id = next(_order_id_counter)
     mock_woocommerce_client.list_paid_orders.return_value = [

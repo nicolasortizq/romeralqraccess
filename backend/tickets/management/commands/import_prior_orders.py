@@ -1,11 +1,14 @@
 """One-off operator command to backfill tickets for orders paid before
 this backend existed.
 
-WooCommerce was selling tickets before the API and webhook went live; any
-order paid in that window has no OnlineTicket yet because no webhook was
-ever delivered for it. Run once by hand, after WooCommerce API keys exist
-(external blocker -- see docs/PROYECTO.md), for each season that needs
-backfilling:
+This command is only for the currently active season (docs/PROYECTO.md
+5.7), never a general "any past season" backfill tool: --season-id must
+equal Season.objects.filter(is_active=True) or the command refuses to
+run (see the active-season guard in handle() below). It exists to cover
+the window before the API and webhook went live; any order paid in that
+window has no OnlineTicket yet because no webhook was ever delivered for
+it. Run once by hand, after WooCommerce API keys exist (external
+blocker -- see docs/PROYECTO.md):
 
     python manage.py import_prior_orders --season-id=<id> [--send-email]
 
@@ -25,10 +28,11 @@ reconcile_orders, this command leaves create_ticket_from_order's own
 season lookup (the currently active Season) in control of the ticket's
 `season` and `valid_until` fields, so all three ticket-creation paths
 (webhook, reconciliation, import) agree on how a ticket's season is
-decided. If the season being imported is not the active one, the
-operator must flip Season.is_active to it first -- this command does not
-do that automatically, since switching the active season is a decision
-with effects beyond this one import run.
+decided. Because of that, --season-id is required to already be the
+active season -- passing a season that used to be active (e.g. after a
+rollover) would silently stamp new tickets with the now-active season's
+dates instead of the one actually being backfilled, so handle() checks
+this and raises CommandError rather than letting that happen quietly.
 """
 
 from datetime import datetime, time
@@ -71,6 +75,19 @@ class Command(BaseCommand):
         season = Season.objects.filter(id=season_id).first()
         if season is None:
             raise CommandError(f"No existe una temporada con id={season_id}.")
+
+        active_season = Season.objects.filter(is_active=True).first()
+        if active_season is None or active_season.id != season.id:
+            raise CommandError(
+                f"La temporada id={season_id} ({season.name}) no es la "
+                "temporada activa. Este comando solo debe usarse para la "
+                "temporada actual (ver docs/PROYECTO.md 5.7): "
+                "create_ticket_from_order estampa la temporada activa en "
+                "cada entrada creada sin importar --season-id, asi que "
+                "correrlo con una temporada antigua despues de un cambio "
+                "de temporada marcaria las entradas con la temporada y "
+                "valid_until equivocados."
+            )
 
         since = timezone.make_aware(datetime.combine(season.starts_on, time.min))
         client = WooCommerceClient()
