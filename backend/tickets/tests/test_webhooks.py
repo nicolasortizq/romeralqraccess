@@ -3,11 +3,14 @@ import hashlib
 import hmac
 import itertools
 import json
+from unittest.mock import Mock, patch
 
 import pytest
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import IntegrityError
 
-from tickets.models import OnlineTicket, TicketEvent
+from tickets import webhooks
+from tickets.models import OnlineTicket, OnlineTicketLine, TicketEvent
 from tickets.tests.conftest import make_online_ticket, make_season
 
 _order_id_counter = itertools.count(9000)
@@ -181,3 +184,61 @@ def test_webhook_already_cancelled_ticket_stays_cancelled(client, settings):
     assert resp.status_code == 200
     ticket = OnlineTicket.objects.get(woo_order_id=order_id)
     assert ticket.status == "CANCELLED"
+
+
+@pytest.mark.django_db
+def test_webhook_response_body_matches_contract(client, settings):
+    """docs/api/openapi.yaml and docs/api/README.md both specify
+    {"received": true} as the success body -- not {"ok": true}."""
+    settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
+    make_season()
+    order_id = next(_order_id_counter)
+    payload = sample_order_payload(order_id=order_id, status="processing")
+    signature = compute_wc_signature(payload, "shhh")
+
+    resp = _post(client, payload, signature)
+
+    assert resp.status_code == 200
+    assert resp.json() == {"received": True}
+
+
+@pytest.mark.django_db
+def test_create_ticket_from_order_sends_email_only_after_commit(
+    django_capture_on_commit_callbacks, settings
+):
+    """The email send is deferred to transaction.on_commit; it must run
+    once the surrounding transaction actually commits."""
+    make_season()
+    order_id = next(_order_id_counter)
+    order = sample_order_payload(order_id=order_id, status="processing")
+
+    fake_emails = Mock()
+    with patch.object(webhooks, "emails", fake_emails):
+        with django_capture_on_commit_callbacks(execute=True):
+            webhooks.create_ticket_from_order(order)
+
+    fake_emails.send_ticket_email.assert_called_once()
+    assert OnlineTicket.objects.filter(woo_order_id=order_id).exists()
+
+
+@pytest.mark.django_db
+def test_create_ticket_from_order_rolls_back_atomically_and_sends_no_email():
+    """A failure between the ticket, line and event writes must leave no
+    orphaned ticket behind (so a WooCommerce re-delivery can create it
+    cleanly) and must not send an email for a ticket that never committed."""
+    make_season()
+    order_id = next(_order_id_counter)
+    order = sample_order_payload(order_id=order_id, status="processing")
+
+    fake_emails = Mock()
+    with patch.object(webhooks, "emails", fake_emails):
+        with patch(
+            "tickets.webhooks.TicketEvent.objects.create",
+            side_effect=IntegrityError("boom"),
+        ):
+            with pytest.raises(IntegrityError):
+                webhooks.create_ticket_from_order(order)
+
+    assert not OnlineTicket.objects.filter(woo_order_id=order_id).exists()
+    assert not OnlineTicketLine.objects.filter(ticket__woo_order_id=order_id).exists()
+    fake_emails.send_ticket_email.assert_not_called()

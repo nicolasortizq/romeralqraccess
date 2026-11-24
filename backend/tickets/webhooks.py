@@ -30,8 +30,18 @@ logger = logging.getLogger(__name__)
 # email was requested, so a missing module never blocks ticket creation --
 # we just log and skip the email, once, here, rather than at every call site.
 try:
-    from tickets import emails
-except ImportError:
+    # `import tickets.emails as emails` (rather than `from tickets import
+    # emails`) is deliberate: it's the form where Python raises
+    # ModuleNotFoundError with exc.name == "tickets.emails" exactly when
+    # that file doesn't exist, and a ModuleNotFoundError naming something
+    # else (e.g. a dependency tickets/emails.py itself imports) when it
+    # does exist but fails while loading.
+    import tickets.emails as emails
+except ModuleNotFoundError as exc:
+    if exc.name != "tickets.emails":
+        # Something tickets.emails itself imports is broken or missing --
+        # that must surface, not be swallowed as "module doesn't exist yet".
+        raise
     emails = None
 
 PAID_STATUSES = {"processing", "completed"}
@@ -51,7 +61,11 @@ def verify_wc_signature(raw_body: bytes, header_value: str) -> bool:
         return False
     digest = hmac.new(secret.encode(), raw_body, hashlib.sha256).digest()
     expected = base64.b64encode(digest).decode()
-    return hmac.compare_digest(expected, header_value)
+    # Django decodes headers as latin-1, so a header with non-ASCII bytes
+    # becomes a str that compare_digest can't compare against another str
+    # (raises TypeError). Comparing as bytes avoids that crash regardless
+    # of what the header contains.
+    return hmac.compare_digest(expected.encode(), header_value.encode("latin-1"))
 
 
 def _parse_purchased_at(order: dict):
@@ -95,69 +109,81 @@ def create_ticket_from_order(order: dict, send_email: bool = True) -> OnlineTick
 
     code = generate_code()
 
-    # get_or_create's create() runs inside its own atomic block and relies
-    # on the unique constraint on woo_order_id: if two webhook deliveries
-    # for the same order race past the `existing` check above, only one
-    # INSERT succeeds and the other call gets IntegrityError -> re-fetches
-    # and returns that row instead of raising. So at most one ticket is
-    # ever created per order even under a true race.
-    ticket, created = OnlineTicket.objects.get_or_create(
-        woo_order_id=order_id,
-        defaults=dict(
-            code_hash=hash_code(code),
-            woo_order_number=str(order.get("number", order_id)),
-            buyer_name=buyer_name,
-            buyer_email=billing.get("email", ""),
-            people_count=people_count,
-            total_paid=round(float(order.get("total", 0) or 0)),
-            payment_method="Webpay",
-            purchased_at=_parse_purchased_at(order),
-            season=season,
-            valid_until=season.ends_on,
-            status="VALID",
-            source="WEBHOOK",
-        ),
-    )
-
-    if not created:
-        return ticket
-
-    OnlineTicketLine.objects.bulk_create(
-        OnlineTicketLine(
-            ticket=ticket,
-            woo_product_id=item.get("product_id", 0),
-            product_name=item.get("name", ""),
-            quantity=int(item.get("quantity", 0)),
-            unit_price=round(float(item.get("price", 0) or 0)),
-            line_total=round(float(item.get("total", 0) or 0)),
+    # The ticket, its lines and its "creada" event must land together: a
+    # crash between the three writes would otherwise leave a VALID ticket
+    # with no lines, and since the `existing` check above short-circuits
+    # on a re-delivery, nothing would ever repair it. Wrapping all three in
+    # one transaction means either all of it exists or none of it does, so
+    # a retried webhook delivery sees "no ticket yet" and creates it properly.
+    with transaction.atomic():
+        # get_or_create's create() runs inside its own atomic block and
+        # relies on the unique constraint on woo_order_id: if two webhook
+        # deliveries for the same order race past the `existing` check
+        # above, only one INSERT succeeds and the other call gets
+        # IntegrityError -> re-fetches and returns that row instead of
+        # raising. So at most one ticket is ever created per order even
+        # under a true race.
+        ticket, created = OnlineTicket.objects.get_or_create(
+            woo_order_id=order_id,
+            defaults=dict(
+                code_hash=hash_code(code),
+                woo_order_number=str(order.get("number", order_id)),
+                buyer_name=buyer_name,
+                buyer_email=billing.get("email", ""),
+                people_count=people_count,
+                total_paid=round(float(order.get("total", 0) or 0)),
+                payment_method="Webpay",
+                purchased_at=_parse_purchased_at(order),
+                season=season,
+                valid_until=season.ends_on,
+                status="VALID",
+                source="WEBHOOK",
+            ),
         )
-        for item in line_items
-    )
 
-    TicketEvent.objects.create(
-        ticket=ticket,
-        event_type="creada",
-        occurred_at=timezone.now(),
-        detail={"woo_order_id": order_id},
-    )
+        if not created:
+            return ticket
 
-    if send_email:
-        if emails is not None:
-            try:
-                emails.send_ticket_email(ticket, code)
-            except Exception:
-                # A failed email must not undo an already-paid ticket; the
-                # buyer can still be found by order number or email.
-                logger.exception(
-                    "Failed to send ticket email for order %s", order_id
-                )
-        else:
-            logger.info(
-                "tickets.emails not available yet; skipped email for order %s",
-                order_id,
+        OnlineTicketLine.objects.bulk_create(
+            OnlineTicketLine(
+                ticket=ticket,
+                woo_product_id=item.get("product_id", 0),
+                product_name=item.get("name", ""),
+                quantity=int(item.get("quantity", 0)),
+                unit_price=round(float(item.get("price", 0) or 0)),
+                line_total=round(float(item.get("total", 0) or 0)),
             )
+            for item in line_items
+        )
+
+        TicketEvent.objects.create(
+            ticket=ticket,
+            event_type="creada",
+            occurred_at=timezone.now(),
+            detail={"woo_order_id": order_id},
+        )
+
+        if send_email:
+            # Deferred to on_commit so a ticket email never goes out for a
+            # ticket whose transaction ends up rolling back.
+            transaction.on_commit(lambda: _send_ticket_email(ticket, code, order_id))
 
     return ticket
+
+
+def _send_ticket_email(ticket: OnlineTicket, code: str, order_id) -> None:
+    if emails is not None:
+        try:
+            emails.send_ticket_email(ticket, code)
+        except Exception:
+            # A failed email must not undo an already-paid ticket; the
+            # buyer can still be found by order number or email.
+            logger.exception("Failed to send ticket email for order %s", order_id)
+    else:
+        logger.warning(
+            "tickets.emails not available yet; skipped email for order %s",
+            order_id,
+        )
 
 
 def _cancel_or_refund_ticket(order_id) -> None:
@@ -226,4 +252,4 @@ def woocommerce_webhook(request) -> HttpResponse:
     # Any other status (pending, on-hold, failed, draft, ...) is not yet
     # a paid order and not a cancellation either -- nothing to do.
 
-    return JsonResponse({"ok": True})
+    return JsonResponse({"received": True})
