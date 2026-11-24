@@ -2,15 +2,24 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
+from django.db import transaction
 from django.utils import timezone
 from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from tickets.auth import TerminalKeyAuth
-from tickets.models import OnlineTicket
+from tickets.models import OnlineTicket, TicketEvent
 from tickets.qr import hash_code
 
 router = Router(auth=TerminalKeyAuth())
+
+# Human-readable reasons for each non-redeemable status, used in the 409
+# response so the cashier screen can show why a code was rejected.
+_NOT_REDEEMABLE_REASONS = {
+    "REDEEMED": "Esta entrada ya fue canjeada.",
+    "CANCELLED": "Esta entrada esta anulada.",
+    "REFUNDED_AFTER_REDEMPTION": "Esta entrada fue reembolsada tras el canje.",
+}
 
 
 class OnlineTicketLineOut(Schema):
@@ -62,6 +71,50 @@ def get_ticket_by_code(request, code: str):
     ticket = OnlineTicket.objects.filter(code_hash=hash_code(code)).first()
     if ticket is None:
         raise HttpError(404, "No existe ninguna entrada con ese código.")
+    return ticket
+
+
+class RedeemIn(Schema):
+    terminal: str
+    redeemed_by: str
+
+
+@router.post("/{code}/redeem", response=OnlineTicketOut)
+def redeem_ticket(request, code: str, payload: RedeemIn):
+    code_hash = hash_code(code)
+    with transaction.atomic():
+        # select_for_update() takes a row lock held for the rest of this
+        # transaction: a second concurrent request for the same code blocks
+        # here until the first commits, then re-reads the now-REDEEMED row
+        # under its own lock and gets 409 instead of racing past this check.
+        ticket = (
+            OnlineTicket.objects.select_for_update()
+            .filter(code_hash=code_hash)
+            .first()
+        )
+        if ticket is None:
+            raise HttpError(404, "No existe ninguna entrada con ese código.")
+
+        if ticket.status != "VALID":
+            reason = _NOT_REDEEMABLE_REASONS.get(
+                ticket.status, "Esta entrada no se puede canjear."
+            )
+            raise HttpError(409, reason)
+
+        now = timezone.now()
+        ticket.status = "REDEEMED"
+        ticket.redeemed_at = now
+        ticket.redeemed_by = payload.redeemed_by
+        ticket.save(update_fields=["status", "redeemed_at", "redeemed_by", "updated_at"])
+
+        TicketEvent.objects.create(
+            ticket=ticket,
+            event_type="canjeada",
+            occurred_at=now,
+            terminal=payload.terminal,
+            detail={"redeemed_by": payload.redeemed_by},
+        )
+
     return ticket
 
 
