@@ -11,10 +11,12 @@ from tickets.models import (
 )
 
 
-def make_season():
-    return Season.objects.create(
+def make_season(**overrides):
+    defaults = dict(
         name="2026-2027", starts_on="2026-11-20", ends_on="2027-02-28"
     )
+    defaults.update(overrides)
+    return Season.objects.create(**defaults)
 
 
 def make_ticket(season, **overrides):
@@ -154,3 +156,30 @@ def test_season_create():
         is_active=True,
     )
     assert str(season.starts_on) == "2026-11-20"
+
+
+def test_only_one_season_can_be_active_at_a_time(db):
+    """webhooks.create_ticket_from_order and import_prior_orders both read
+    Season.objects.filter(is_active=True).first() and treat it as "the"
+    season; a second active season would make that choice arbitrary and
+    stamp the wrong valid_until onto tickets."""
+    make_season(name="2026-2027", is_active=True)
+
+    with pytest.raises(IntegrityError):
+        make_season(
+            name="2027-2028",
+            starts_on="2027-11-20",
+            ends_on="2028-02-28",
+            is_active=True,
+        )
+
+
+def test_a_second_inactive_season_is_allowed(db):
+    make_season(name="2026-2027", is_active=True)
+    make_season(
+        name="2027-2028",
+        starts_on="2027-11-20",
+        ends_on="2028-02-28",
+        is_active=False,
+    )
+    assert Season.objects.count() == 2

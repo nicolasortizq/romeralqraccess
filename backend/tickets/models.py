@@ -1,6 +1,7 @@
 import uuid
 
 from django.db import models
+from django.db.models import Q
 
 
 class Season(models.Model):
@@ -12,6 +13,22 @@ class Season(models.Model):
     starts_on = models.DateField()
     ends_on = models.DateField()
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        constraints = [
+            # Enforced in the database, not just assumed: the webhook and
+            # import_prior_orders both read
+            # Season.objects.filter(is_active=True).first() and treat the
+            # result as "the" season. With two active seasons that .first()
+            # is arbitrary, so tickets would silently get the wrong
+            # valid_until. A partial unique index makes the second active
+            # season impossible instead.
+            models.UniqueConstraint(
+                fields=["is_active"],
+                condition=Q(is_active=True),
+                name="unique_active_season",
+            )
+        ]
 
     def __str__(self):
         return self.name
