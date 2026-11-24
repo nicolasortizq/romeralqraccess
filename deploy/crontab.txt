@@ -1,0 +1,24 @@
+# Cron schedule for the romeralQRAccess VPS.
+#
+# Install with: crontab -u romeral deploy/crontab.txt
+# (as root, or logged in as the "romeral" service user - see
+# deploy/setup_vps.sh for that user and deploy/backup_db.sh for the
+# backup script's own required environment variables.)
+#
+# Both jobs assume the app checkout lives at /srv/romeral/app, with
+# the virtualenv at /srv/romeral/app/backend/.venv, matching
+# deploy/setup_vps.sh and deploy/gunicorn.service.
+#
+# RCLONE_REMOTE_NAME and GDRIVE_BACKUP_FOLDER configure the backup
+# job's destination; see deploy/backup_db.sh for what they mean and
+# why the Drive folder and remote name are not hardcoded there.
+RCLONE_REMOTE_NAME=gdrive-backup
+GDRIVE_BACKUP_FOLDER=romeral-backups
+
+# Every 10 minutes: catch any paid WooCommerce order that the webhook
+# missed (network blip, server restart) and create its ticket.
+*/10 * * * * /srv/romeral/app/backend/.venv/bin/python /srv/romeral/app/backend/manage.py reconcile_orders >> /srv/romeral/app/backend/logs/reconcile_orders.log 2>&1
+
+# Daily at 03:15 (off-peak - the park is closed and WooCommerce
+# traffic is at its lowest), a full database backup to Google Drive.
+15 3 * * * /srv/romeral/app/deploy/backup_db.sh
