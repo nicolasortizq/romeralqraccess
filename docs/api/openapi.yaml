@@ -170,6 +170,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '409':
+          description: >
+            La entrada no ha sido canjeada (no está en estado `REDEEMED`),
+            por lo que todavía no corresponde informar su boleta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/v1/woocommerce/webhook:
     post:

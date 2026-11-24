@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from django.db import transaction
@@ -122,7 +122,7 @@ def redeem_ticket(request, code: str, payload: RedeemIn):
 
 
 class InvoiceIn(Schema):
-    status: str
+    status: Literal["ISSUED", "PENDING_REVIEW"]
     folio: Optional[str] = None
 
 
@@ -136,17 +136,18 @@ def report_invoice(request, code: str, payload: InvoiceIn):
         raise HttpError(409, "Solo se puede informar la boleta de una entrada ya canjeada.")
 
     now = timezone.now()
-    ticket.invoice_status = payload.status
-    ticket.invoice_folio = payload.folio
-    ticket.save(update_fields=["invoice_status", "invoice_folio", "updated_at"])
+    with transaction.atomic():
+        ticket.invoice_status = payload.status
+        ticket.invoice_folio = payload.folio
+        ticket.save(update_fields=["invoice_status", "invoice_folio", "updated_at"])
 
-    event_type = "boleta emitida" if payload.status == "ISSUED" else "boleta pendiente"
-    TicketEvent.objects.create(
-        ticket=ticket,
-        event_type=event_type,
-        occurred_at=now,
-        detail={"folio": payload.folio},
-    )
+        event_type = "boleta emitida" if payload.status == "ISSUED" else "boleta pendiente"
+        TicketEvent.objects.create(
+            ticket=ticket,
+            event_type=event_type,
+            occurred_at=now,
+            detail={"folio": payload.folio},
+        )
 
     return ticket
 
