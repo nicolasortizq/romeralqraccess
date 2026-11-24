@@ -16,7 +16,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from ninja import NinjaAPI
+
+from tickets.api import router as tickets_router
+
+api = NinjaAPI(title="romeralQRAccess API", version="0.1.0")
+api.add_router("/tickets", tickets_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/v1/', api.urls),
 ]

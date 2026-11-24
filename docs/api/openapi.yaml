@@ -394,6 +394,17 @@ components:
           description: Detalle de productos y precios del pedido.
           items:
             $ref: '#/components/schemas/OnlineTicketLine'
+        display_status:
+          type: ["string", "null"]
+          description: >
+            Estado derivado para mostrar en pantalla, calculado al vuelo.
+            Solo aparece cuando difiere del `status` guardado; por ejemplo
+            "fuera de temporada" cuando una entrada sigue en estado `VALID`
+            pero su temporada ya terminó (`valid_until` ya pasó) y no fue
+            canjeada. Nulo o ausente cuando el `status` guardado ya refleja
+            la realidad.
+          enum: ["fuera de temporada", null]
+          example: "fuera de temporada"
 
     RedeemRequest:
       type: object
