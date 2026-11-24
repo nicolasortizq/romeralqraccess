@@ -6,3 +6,4 @@ psycopg[binary]>=3.3,<4
 pytest>=8.3,<9
 pytest-django>=4.9,<5
 qrcode[pil]>=8,<9
+requests>=2.34,<3
