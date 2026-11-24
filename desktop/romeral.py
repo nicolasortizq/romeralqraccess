@@ -971,15 +971,23 @@ class Romeral(tk.Tk):
   boton.pack(pady=15)
   tk.Label(win,text='Después de emitir, verifica el folio y descarga el PDF oficial en Facturacion.com.\nLa impresión tributaria usa ese PDF, no un comprobante interno.',bg='#f1f6fc',justify='center').pack(pady=6)
 
- def datos_hoy(self):
-  return conn.execute('SELECT medio,COALESCE(SUM(cantidad),0),COALESCE(SUM(total),0),COUNT(*) FROM ventas WHERE fecha>=? AND fecha<? AND estado_boleta <> \'ANULADA_PRUEBA\' GROUP BY medio',
-   (datetime.now().strftime('%Y-%m-%d'),(datetime.now().date()).isoformat()+'T99')).fetchall()
  def actualizar_resumen(self):
-  rows=self.datos_hoy();persons=sum(r[1] for r in rows);amount=sum(r[2] for r in rows);ops=sum(r[3] for r in rows)
-  by={r[0]:r[2] for r in rows}
-  desglose=conn.execute("SELECT CASE WHEN tipo='Alojamiento' THEN 'Cabañas' ELSE tipo END,COALESCE(SUM(cantidad),0),COALESCE(SUM(total),0) FROM ventas WHERE substr(fecha,1,10)=? AND estado_boleta <> 'ANULADA_PRUEBA' GROUP BY CASE WHEN tipo='Alojamiento' THEN 'Cabañas' ELSE tipo END",(datetime.now().strftime('%Y-%m-%d'),)).fetchall()
-  detalle='\n'.join(f'{t}: {p} pers. · {pesos(m)}' for t,p,m in desglose)
-  self.resumen.set(f'PERSONAS INGRESADAS\n{persons}\n\nRECAUDACIÓN\n{pesos(amount)}\n\nVENTAS REALIZADAS\n{ops}\n\nPOR MEDIO DE PAGO\n'+ '\n'.join(f'{m}: {pesos(by.get(m,0))}' for m in PAYMENTS) + '\n\nPOR TIPO DE ENTRADA\n' + detalle)
+  # Misma agregación que el cierre impreso (calcular_resumen_cierre), no una
+  # consulta propia: el panel en pantalla y el cierre del día tienen que
+  # hablar de las mismas cifras. La versión anterior agrupaba solo por
+  # tipo/medio, sin mirar `origen`, así que los canjes online aparecían
+  # sumados dentro de 'Entrada General' y 'Webpay' mientras el cierre los
+  # mostraba aparte.
+  r=calcular_resumen_cierre(conn,datetime.now().strftime('%Y-%m-%d'))
+  detalle='\n'.join(f'{k}: {v["personas"]} pers. · {pesos(v["total"])}' for k,v in sorted(r['presencial'].items())) or 'Sin ventas presenciales'
+  online=r['online']
+  canjes=online['ventas']
+  online_linea=(f'{online["personas"]} pers. · {canjes} ' + ('canje' if canjes==1 else 'canjes') + f' · {pesos(online["total"])}' if canjes else 'Sin canjes online')
+  self.resumen.set(
+   f'PERSONAS INGRESADAS\n{r["personas"]}\n\nRECAUDACIÓN\n{pesos(r["total"])}\n\nVENTAS REALIZADAS\n{r["ventas"]}\n\nPOR MEDIO DE PAGO\n'
+   + '\n'.join(f'{m}: {pesos(r["medios"].get(m,0))}' for m in PAYMENTS)
+   + '\n\nPOR TIPO DE ENTRADA\n' + detalle
+   + '\n\nONLINE (no suma a efectivo esperado)\n' + online_linea)
  def panel_facturacion(self):
    """Inspección local únicamente; nunca transmite credenciales ni invoca Procesar."""
    win=tk.Toplevel(self);win.title('ROMERAL | Estado de producción');win.geometry('740x490')
