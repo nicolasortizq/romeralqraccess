@@ -67,6 +67,13 @@ fail() {
 
 mkdir -p "$(dirname "${LOG_FILE}")"
 
+# Cron's PATH is minimal (typically /usr/bin:/bin on AlmaLinux), where
+# pg_dump normally lives but a self-installed rclone binary may not -
+# fail loudly here rather than with a cryptic "command not found"
+# further down.
+command -v pg_dump >/dev/null 2>&1 || fail "pg_dump not found on PATH (${PATH})."
+command -v rclone >/dev/null 2>&1 || fail "rclone not found on PATH (${PATH})."
+
 : "${RCLONE_REMOTE_NAME:?RCLONE_REMOTE_NAME must be set (name of the configured rclone remote)}"
 : "${GDRIVE_BACKUP_FOLDER:?GDRIVE_BACKUP_FOLDER must be set (destination path inside that remote)}"
 
@@ -108,10 +115,11 @@ trap cleanup EXIT
 
 export PGPASSWORD="${DB_PASSWORD}"
 
+PG_DUMP_ERR_FILE="${TMP_DIR}/pg_dump.err"
 if ! pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${DB_USER}" -d "${DB_NAME}" \
-    -F c -f "${DUMP_FILE}"; then
+    -F c -f "${DUMP_FILE}" 2>"${PG_DUMP_ERR_FILE}"; then
     unset PGPASSWORD
-    fail "pg_dump failed for database '${DB_NAME}'; no backup was uploaded."
+    fail "pg_dump failed for database '${DB_NAME}'; no backup was uploaded. stderr: $(tr '\n' ' ' <"${PG_DUMP_ERR_FILE}")"
 fi
 unset PGPASSWORD
 
@@ -119,8 +127,9 @@ if [[ ! -s "${DUMP_FILE}" ]]; then
     fail "pg_dump produced an empty dump file; no backup was uploaded."
 fi
 
-if ! rclone copy "${DUMP_FILE}" "${RCLONE_REMOTE_NAME}:${GDRIVE_BACKUP_FOLDER}"; then
-    fail "rclone copy to '${RCLONE_REMOTE_NAME}:${GDRIVE_BACKUP_FOLDER}' failed; dump was not uploaded."
+RCLONE_ERR_FILE="${TMP_DIR}/rclone.err"
+if ! rclone copy "${DUMP_FILE}" "${RCLONE_REMOTE_NAME}:${GDRIVE_BACKUP_FOLDER}" 2>"${RCLONE_ERR_FILE}"; then
+    fail "rclone copy to '${RCLONE_REMOTE_NAME}:${GDRIVE_BACKUP_FOLDER}' failed; dump was not uploaded. stderr: $(tr '\n' ' ' <"${RCLONE_ERR_FILE}")"
 fi
 
 log "SUCCESS: uploaded $(basename "${DUMP_FILE}") ($(du -h "${DUMP_FILE}" | cut -f1)) to ${RCLONE_REMOTE_NAME}:${GDRIVE_BACKUP_FOLDER}"

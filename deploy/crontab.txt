@@ -21,4 +21,4 @@ GDRIVE_BACKUP_FOLDER=romeral-backups
 
 # Daily at 03:15 (off-peak - the park is closed and WooCommerce
 # traffic is at its lowest), a full database backup to Google Drive.
-15 3 * * * /srv/romeral/app/deploy/backup_db.sh
+15 3 * * * /srv/romeral/app/deploy/backup_db.sh >> /srv/romeral/app/backend/logs/backup_db.log 2>&1
