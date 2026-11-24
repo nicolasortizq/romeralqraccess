@@ -121,6 +121,36 @@ def redeem_ticket(request, code: str, payload: RedeemIn):
     return ticket
 
 
+class InvoiceIn(Schema):
+    status: str
+    folio: Optional[str] = None
+
+
+@router.post("/{code}/invoice", response=OnlineTicketOut)
+def report_invoice(request, code: str, payload: InvoiceIn):
+    ticket = OnlineTicket.objects.filter(code_hash=hash_code(code)).first()
+    if ticket is None:
+        raise HttpError(404, "No existe ninguna entrada con ese código.")
+
+    if ticket.status != "REDEEMED":
+        raise HttpError(409, "Solo se puede informar la boleta de una entrada ya canjeada.")
+
+    now = timezone.now()
+    ticket.invoice_status = payload.status
+    ticket.invoice_folio = payload.folio
+    ticket.save(update_fields=["invoice_status", "invoice_folio", "updated_at"])
+
+    event_type = "boleta emitida" if payload.status == "ISSUED" else "boleta pendiente"
+    TicketEvent.objects.create(
+        ticket=ticket,
+        event_type=event_type,
+        occurred_at=now,
+        detail={"folio": payload.folio},
+    )
+
+    return ticket
+
+
 @router.get("", response=list[OnlineTicketOut])
 def search_tickets(
     request, order: Optional[str] = None, email: Optional[str] = None
