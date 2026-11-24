@@ -982,41 +982,52 @@ class Romeral(tk.Tk):
    tk.Button(win,text='VER EJEMPLO LOCAL DE BOLETA $10.000',command=vista_previa,font=('Arial',12,'bold'),pady=9).pack(fill='x',padx=20,pady=(0,18))
 
  def panel_qr_online(self):
-  """Fase 1: lector USB tipo teclado / ingreso manual y registro sin emisión."""
+  """Fase 1: lector USB tipo teclado / ingreso manual y registro sin emisión.
+
+  TODO(task-19): esta pantalla aun depende de nombres (estadisticas_qr,
+  buscar_qr, registrar_qr) que seran reconectados al nuevo modulo online.
+  El try/except de abajo es solo para que abrir la pantalla no reviente
+  con una excepcion sin manejar mientras eso se resuelve.
+  """
   win=tk.Toplevel(self)
-  win.title('ROMERAL | Ventas Online · Validación QR')
-  win.geometry('780x650');win.minsize(680,560);win.configure(bg='#EDF3F8')
-  tk.Label(win,text='VENTAS ONLINE · CÓDIGO QR',bg='#102F52',fg='white',
-           font=('Arial',21,'bold'),pady=20).pack(fill='x')
-  tk.Label(win,text='ETAPA DE PREINTEGRACIÓN · SIN CONEXIÓN A LA WEB',bg='#FFF0CF',fg='#744300',
-           font=('Arial',11,'bold'),pady=10).pack(fill='x')
-  zona=tk.Frame(win,bg='white',padx=25,pady=20);zona.pack(fill='both',expand=True,padx=18,pady=16)
-  tk.Label(zona,text='Escanea el QR con un lector USB o ingresa su código:',bg='white',fg='#102F52',font=('Arial',12,'bold')).pack(anchor='w')
-  codigo=tk.StringVar()
-  entrada=tk.Entry(zona,textvariable=codigo,font=('Arial',17),width=48)
-  entrada.pack(fill='x',pady=(10,12));entrada.focus_set()
-  resultado=tk.StringVar(value='Aún no se ha registrado ningún código en esta consulta.')
-  tk.Label(zona,textvariable=resultado,bg='#EDF3F8',fg='#17385C',justify='left',anchor='nw',
-           font=('Arial',12),wraplength=660,padx=16,pady=18).pack(fill='both',expand=True,pady=(12,12))
-  def escanear(event=None):
-   try:
-    previo=buscar_qr(conn,codigo.get())
-    fila=previo or registrar_qr(conn,codigo.get())
-   except (ValueError,sqlite3.Error) as exc:
-    messagebox.showwarning('Código QR',str(exc),parent=win);return
-   ident,mascara,pedido,fecha_visita,cantidad,monto,estado,pago_ok,doc_ok,folio,fecha_registro=fila
-   resultado.set(f'QR registrado: #{ident}\nCódigo: {mascara}\nPrimer registro: {fecha_registro}\n\n'
-      + ('ATENCIÓN: código ya registrado anteriormente.\n\n' if previo else 'Nuevo código guardado localmente.\n\n')
-      + f'Estado: {estado}\nPedido: {pedido or "No consultado"}\nPago: NO VERIFICADO\nBoleta: NO VERIFICADA\n\n'
-      + 'EMITIR BOLETA: BLOQUEADO hasta conectar una API segura de pedidos y verificar el documento en Facturacion.com.')
-   entrada.select_range(0,'end');entrada.focus_set()
-  self.boton_color(zona,'ESCANEAR / REGISTRAR QR',escanear,'#19705B',size=12,alto=58).pack(fill='x')
-  entrada.bind('<Return>',escanear)
-  tk.Label(zona,text='EMITIR BOLETA ELECTRÓNICA · PENDIENTE DE VALIDACIÓN',bg='#AAB3BE',fg='white',
-           font=('Arial',11,'bold'),pady=15).pack(fill='x',pady=(12,0))
-  total,pendientes=estadisticas_qr(conn)
-  tk.Label(zona,text=f'QR registrados localmente: {total or 0} · Pendientes de verificación: {pendientes or 0}',
-           bg='white',fg='#5C7187',font=('Arial',10)).pack(anchor='w',pady=(12,0))
+  try:
+   win.title('ROMERAL | Ventas Online · Validación QR')
+   win.geometry('780x650');win.minsize(680,560);win.configure(bg='#EDF3F8')
+   tk.Label(win,text='VENTAS ONLINE · CÓDIGO QR',bg='#102F52',fg='white',
+            font=('Arial',21,'bold'),pady=20).pack(fill='x')
+   tk.Label(win,text='ETAPA DE PREINTEGRACIÓN · SIN CONEXIÓN A LA WEB',bg='#FFF0CF',fg='#744300',
+            font=('Arial',11,'bold'),pady=10).pack(fill='x')
+   zona=tk.Frame(win,bg='white',padx=25,pady=20);zona.pack(fill='both',expand=True,padx=18,pady=16)
+   tk.Label(zona,text='Escanea el QR con un lector USB o ingresa su código:',bg='white',fg='#102F52',font=('Arial',12,'bold')).pack(anchor='w')
+   codigo=tk.StringVar()
+   entrada=tk.Entry(zona,textvariable=codigo,font=('Arial',17),width=48)
+   entrada.pack(fill='x',pady=(10,12));entrada.focus_set()
+   resultado=tk.StringVar(value='Aún no se ha registrado ningún código en esta consulta.')
+   tk.Label(zona,textvariable=resultado,bg='#EDF3F8',fg='#17385C',justify='left',anchor='nw',
+            font=('Arial',12),wraplength=660,padx=16,pady=18).pack(fill='both',expand=True,pady=(12,12))
+   def escanear(event=None):
+    try:
+     previo=buscar_qr(conn,codigo.get())
+     fila=previo or registrar_qr(conn,codigo.get())
+    except (ValueError,sqlite3.Error) as exc:
+     messagebox.showwarning('Código QR',str(exc),parent=win);return
+    ident,mascara,pedido,fecha_visita,cantidad,monto,estado,pago_ok,doc_ok,folio,fecha_registro=fila
+    resultado.set(f'QR registrado: #{ident}\nCódigo: {mascara}\nPrimer registro: {fecha_registro}\n\n'
+       + ('ATENCIÓN: código ya registrado anteriormente.\n\n' if previo else 'Nuevo código guardado localmente.\n\n')
+       + f'Estado: {estado}\nPedido: {pedido or "No consultado"}\nPago: NO VERIFICADO\nBoleta: NO VERIFICADA\n\n'
+       + 'EMITIR BOLETA: BLOQUEADO hasta conectar una API segura de pedidos y verificar el documento en Facturacion.com.')
+    entrada.select_range(0,'end');entrada.focus_set()
+   self.boton_color(zona,'ESCANEAR / REGISTRAR QR',escanear,'#19705B',size=12,alto=58).pack(fill='x')
+   entrada.bind('<Return>',escanear)
+   tk.Label(zona,text='EMITIR BOLETA ELECTRÓNICA · PENDIENTE DE VALIDACIÓN',bg='#AAB3BE',fg='white',
+            font=('Arial',11,'bold'),pady=15).pack(fill='x',pady=(12,0))
+   total,pendientes=estadisticas_qr(conn)
+   tk.Label(zona,text=f'QR registrados localmente: {total or 0} · Pendientes de verificación: {pendientes or 0}',
+            bg='white',fg='#5C7187',font=('Arial',10)).pack(anchor='w',pady=(12,0))
+  except Exception:
+   win.destroy()
+   messagebox.showwarning('Ventas Online QR',
+    'Pantalla en actualización, vuelve a intentarlo más tarde.',parent=self)
 
  def imprimir_cierre_termico(self, fecha, preliminar=False):
   from cierre_termico import crear_pdf_cierre, enviar_pdf_termico
