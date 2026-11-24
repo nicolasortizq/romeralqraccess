@@ -1,0 +1,18 @@
+ROMERAL v2.6.3 - correccion de enlace PDF codificado
+
+Diagnostico real: ObtenerLink entrega una URL HTTP codificada en Base64.
+Esta version decodifica el enlace, comprueba que pertenece a facturacion.cl y
+lo convierte a HTTPS antes de descargar. Nunca envia tokens por HTTP.
+
+IMPORTANTE: Si el servidor no admite HTTPS, la descarga fallara de forma segura.
+No se habilita HTTP como alternativa por contener parametros de descarga privados.
+
+PRUEBA SIN NUEVA EMISION:
+1. Cerrar ROMERAL y respaldar Documentos/ROMERAL_Datos.
+2. Abrir Abrir_en_Mac.command.
+3. Encender la impresora POS-80.
+4. Usar Reimprimir DTE, venta 6 (folio 26185).
+5. Si no funciona, informar el error exacto; NO volver a emitir la boleta.
+
+El codigo fue validado localmente, no se ha comprobado la conexion HTTPS
+con Facturacion.com ni la impresion fisica.

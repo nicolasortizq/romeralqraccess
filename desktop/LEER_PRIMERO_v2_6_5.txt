@@ -1,0 +1,13 @@
+ROMERAL v2.6.5 - IMPRESIÓN TÉRMICA 80 mm (CANDIDATA)
+
+- Se conserva intacto el PDF oficial de Facturacion.com.
+- Se genera una copia *_TERMICA_80mm.pdf con ancho 80 mm, contenido escalado proporcionalmente y espacios blancos grandes eliminados.
+- La impresión automática y la reimpresión usan esta copia.
+- El programa busca explícitamente la impresora POS-80/3nStar; NO usa la Brother como alternativa silenciosa.
+- Si hay más de una impresora POS-80 o ninguna, mostrará un error en vez de imprimir en otro dispositivo.
+- Se necesita PyMuPDF (fitz), Pillow y numpy. Si faltan: python3 -m pip install pymupdf pillow numpy
+- En macOS, lp confirma recepción en cola, NO impresión física; comprobar el papel y el timbre.
+- La hora de ingreso se conserva en el registro de venta; esta actualización no inserta esa hora dentro del PDF tributario original.
+
+PRUEBA SEGURA: respalda Documentos/ROMERAL_Datos, abre Abrir_en_Mac.command, usa Reimprimir DTE con venta 6.
+No se emite otro DTE. No borres bases de datos ni cambies credenciales.

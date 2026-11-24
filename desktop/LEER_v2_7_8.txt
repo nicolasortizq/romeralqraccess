@@ -1,0 +1,13 @@
+ROMERAL v2.7.8 — DIAGNÓSTICO SEGURO DE CONSULTA CAF
+
+Esta versión NO confirma todavía el saldo de folios del proveedor.
+Conserva la aplicación de caja de la 2.7.7 y agrega un registro de la estructura de la respuesta de ConsultarCAF cuando no puede interpretarla.
+
+PROCEDIMIENTO
+1. Respaldar ~/Documents/ROMERAL_Datos.
+2. Abrir Abrir_en_Mac.command y entrar a Folios DTE con clave de supervisor.
+3. Pulsar CONSULTAR AHORA · SOLO LECTURA (no emite DTE).
+4. Enviar SOLO el archivo ~/Documents/ROMERAL_Datos/romeral_diagnostico_caf.jsonl.
+
+El diagnóstico guarda únicamente nombres de etiquetas XML, tamaños y huella criptográfica, sin valores de la respuesta SOAP ni credenciales. No confirma la conexión hasta probar en el Mac con credenciales válidas.
+No cambiar la emisión ni el manejo de folios de la caja basándose en el resultado de esta prueba.

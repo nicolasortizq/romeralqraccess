@@ -1,0 +1,14 @@
+ROMERAL v2.8.0 — Interfaz táctil corregida (candidata de pruebas)
+
+Cambios visuales:
+- Botones táctiles redondeados reales para modalidades, teclado, pagos y Registrar venta.
+- Tres columnas redistribuidas para evitar textos cortados.
+- Barra superior compacta y contador CAF DTE39 visible.
+- Resumen del día con ajuste automático de líneas.
+- Botón Registrar venta completo y destacado.
+
+Conserva la lógica tributaria de la versión base v2.8.0 (derivada de v2.7.9).
+No se han realizado emisiones reales ni pruebas de impresión con esta versión.
+Antes de usar en producción, probar visualmente en Mac, comprobar ventas y emisión/impresión de forma controlada sin duplicar DTE.
+No eliminar ni sobrescribir ~/Documents/ROMERAL_Datos; realizar respaldo.
+La solicitud de folios es informativa, no envía solicitudes API.

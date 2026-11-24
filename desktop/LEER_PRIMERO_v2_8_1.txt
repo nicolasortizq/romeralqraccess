@@ -1,0 +1,27 @@
+ROMERAL v2.8.1 - CIERRE DIARIO OBLIGATORIO
+
+NOVEDADES
+- Bloqueo de ventas cuando hay jornadas anteriores con ventas sin cierre.
+- Un cierre por fecha; cierre protegido con clave supervisor.
+- Si hoy ya fue cerrado, no se admiten nuevas ventas hoy.
+- Al cerrar, SQLite guarda una copia inmutable de las operaciones en cierre_operaciones.
+- Impresión de cierre y resumen provisorio en PDF de 80 mm usando la cola térmica CUPS en Mac/Linux.
+- Historial permite reimprimir el cierre en la misma impresora.
+- La impresión fallida no revierte un cierre guardado.
+- El PDF de cierre es INTERNO, NO ES UNA BOLETA ELECTRONICA.
+
+IMPORTANTE
+1. Respalda ~/Documents/ROMERAL_Datos antes de ejecutar esta versión.
+2. Si ya tienes ventas históricas sin cierre, el bloqueo aparecerá al abrir la caja.
+   Entra a Cierre caja, cierra la jornada más antigua y repite hasta regularizar.
+3. Días sin ventas no requieren cierre.
+4. El resumen provisional se puede imprimir sin cerrar.
+5. En Windows el PDF se abre para imprimir manualmente; la impresión automática
+   requiere configurar el controlador y probarlo en el equipo Windows definitivo.
+6. La impresión en Mac requiere impresora configurada en CUPS (como las boletas).
+7. Nunca realizar emisiones reales de prueba para validar esta función.
+8. El registro de cierre no altera la emisión DTE ni los folios.
+
+NOTA SOBRE EL CAMBIO DE FECHA
+Se verifica el bloqueo al registrar y periódicamente mientras está abierto el programa.
+Una venta que ya estaba en proceso de emisión no se interrumpe.

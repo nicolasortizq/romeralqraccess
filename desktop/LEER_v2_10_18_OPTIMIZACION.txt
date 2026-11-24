@@ -1,0 +1,13 @@
+ROMERAL v2.10.18 - Optimización conservadora de conexión HTTPS
+
+Cambio: la recuperación del PDF oficial reutiliza la misma sesión HTTPS
+para ObtenerLink y descargar el documento, evitando crear una segunda sesión.
+No se modifica la emisión SOAP Procesar, el folio, el control de duplicados,
+el formato térmico aprobado ni los tiempos de espera existentes.
+
+No se garantiza una reducción de 2 segundos: medir con
+REPORTE_RENDIMIENTO_Windows.bat y comparar contra v2.10.17.
+
+INSTALACIÓN: cerrar ROMERAL, respaldar carpeta anterior y extraer
+este ZIP en una carpeta nueva. Mantener la carpeta ROMERAL_Datos.
+No hacer ventas ficticias en producción para medir tiempos.

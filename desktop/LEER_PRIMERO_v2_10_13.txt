@@ -1,0 +1,12 @@
+ROMERAL v2.10.13 - FORMATO TERMICO APROBADO (80 mm)
+
+CAMBIO: impresion_oficial.py utiliza boleta_termica_romeral.py cuando existe una venta emitida con folio confirmado. Se extrae el timbre PDF417 del PDF oficial; el PDF oficial nunca se modifica.
+
+PRUEBA SIN NUEVA EMISION:
+1. Respaldar Documentos\ROMERAL_Datos y cerrar ROMERAL.
+2. Instalar esta carpeta como actualizacion, conservando Documentos\ROMERAL_Datos.
+3. Ejecutar IMPRIMIR_BOLETA_26193_80MM.bat una sola vez y revisar el papel.
+4. Si el programa bloquea la impresion por falta de coincidencia de folio, total o timbre, NO fuerce el proceso. Envie la captura del error para corregirlo.
+
+Esta version NO habilita la emision general. La emision unica ya realizada NO debe repetirse.
+Pruebas locales: compilacion Python y verificacion de archivos. No se ha probado con la impresora fisica del usuario.

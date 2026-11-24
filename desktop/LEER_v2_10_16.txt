@@ -1,0 +1,8 @@
+ROMERAL v2.10.16 - Optimizacion conservadora de impresion Windows.
+
+- Evita ejecutar PowerShell para enumerar impresoras en cada boleta (cache 60 segundos).
+- Conserva emision SOAP, conciliacion, folios y formato termico sin cambios.
+- Agrega REPORTE_RENDIMIENTO_Windows.bat para revisar diagnosticos locales sin emitir boletas.
+- El tiempo real y la compatibilidad con impresora deben comprobarse en Windows.
+- Si cambia la impresora durante la sesion, reinicie ROMERAL para actualizar inmediatamente la lista.
+- No ejecutar pruebas ficticias en produccion.

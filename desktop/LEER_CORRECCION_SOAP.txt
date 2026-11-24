@@ -1,0 +1,1 @@
+Revisión: respuesta SOAP persistida antes de conciliación; folio informado solo si coincide con estado DTE persistido; errores ambiguos bloquean reenvío. No se ha realizado emisión real ni validado el formato TXT con el proveedor. Conservar respaldo y no emitir hasta verificar formato y esquema SOAP.

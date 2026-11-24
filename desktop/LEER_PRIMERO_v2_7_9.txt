@@ -1,0 +1,13 @@
+ROMERAL v2.7.9 - Corrección del lector de CAF DTE39
+
+CAMBIO: se admiten RangoDesde/RangoHasta y FolioDesde/FolioHasta en la respuesta ConsultarCAF.
+El indicador de folios estimados sigue visible en pantalla y la consulta se repite cada 15 minutos.
+Se elimina el aviso emergente «Consulta en curso» del panel de folios.
+
+VALIDADO: sintaxis Python y 5 pruebas locales con respuestas XML simuladas.
+PENDIENTE: verificar consulta real en el Mac con Facturacion.com. No se ha confirmado el saldo real.
+
+SEGURIDAD: no se modificaron emisión, impresión, base de datos ni credenciales.
+Respaldar ~/Documents/ROMERAL_Datos antes de iniciar. No borrar esa carpeta.
+
+Abrir Abrir_en_Mac.command. Revisar Folios DTE y enviar captura del saldo y su hora.

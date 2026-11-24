@@ -1,0 +1,22 @@
+ROMERAL 2.3 — Integración de caja y emisión DTE 39 (17-11-2026)
+
+CAMBIOS
+- Botón Emitir DTE dentro de ROMERAL; también se ofrece al registrar una venta.
+- Muestra solo ventas de hoy pendientes, sin folio y sin intentos SOAP anteriores.
+- Emisión real con confirmación individual y un único envío; respuesta registrada en SQLite y XML.
+- Si hay timeout, error o resultado ambiguo: NO repetir. Verificar portal Facturacion.com.
+- Botón PDF boleta abre el PDF oficial descargado desde el portal sin modificarlo.
+- Mantiene los módulos de caja, cierres, auditoría y controles DTE previos.
+
+IMPORTANTE
+- La venta 5, folio 26184, YA FUE EMITIDA: nunca reenviarla.
+- Utiliza ~/Documents/ROMERAL_Datos/romeral.sqlite3 existente; NO borrar ni reemplazar esa carpeta.
+- Las credenciales permanecen en configuración local y llavero del Mac. No están en este ZIP.
+- Antes de sustituir la aplicación: RESPALDAR_DATOS.py o copiar la carpeta ROMERAL_Datos con ROMERAL cerrado.
+- Instalar en Mac: python3 -m pip install zeep requests keyring
+- Iniciar: doble clic Abrir_en_Mac.command.
+- La emisión es explícita, NO automática al registrar: reduce errores operativos.
+- No hay recuperación automática del PDF oficial desde Facturacion.com. Debe descargarse del portal y abrirse con PDF boleta.
+- No se ha probado este flujo integrado contra el servicio real; la emisión independiente de la venta 5 sí fue comprobada.
+- No hacer una nueva emisión solo para probar la interfaz. Verificar primero que el folio 26184 sigue registrado.
+- No imprimir un comprobante interno como sustituto del PDF tributario.

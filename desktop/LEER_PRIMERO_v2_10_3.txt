@@ -1,0 +1,11 @@
+ROMERAL v2.10.3 - Prueba de impresion local 80 mm
+
+1. Extraer el ZIP en carpeta nueva.
+2. Ejecutar INSTALAR_WINDOWS.bat para instalar reportlab y las dependencias.
+3. Abrir Abrir_Prueba_Impresion_80mm_v2_10_3_Windows.bat.
+4. Seleccionar impresora, generar PDF y luego imprimir una muestra.
+
+IMPORTANTE: el PDF esta rotulado MUESTRA NO TRIBUTARIA y NO ES una boleta electronica oficial.
+No se emite ni consulta ningun DTE, ni se consumen folios, ni se altera la caja.
+No se modifica Documentos\\ROMERAL_Datos, salvo crear una carpeta pruebas_impresion.
+La integracion para obtener e imprimir el PDF tributario oficial de Facturacion.com sigue pendiente.

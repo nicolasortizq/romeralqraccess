@@ -1,0 +1,9 @@
+ROMERAL v2.9.4 - Diagnóstico de vigencia CAF, Windows 1024x768
+
+CAMBIOS: reconocimiento conservador de fechas ISO con zonas/segundos, DD/MM/AAAA, AAAAMMDD, fechas con hora y formato Microsoft /Date(ms)/. Si el vencimiento sigue sin interpretarse, se muestra una descripción del FORMATO sin revelar el valor. Se conserva el diagnóstico de rango de la v2.9.3.
+
+IMPORTANTE: la autenticación formal del proveedor SIGUE PENDIENTE; una respuesta SOAP no equivale a aprobación oficial. Emisión real BLOQUEADA. No se invoca Procesar.
+
+INSTALACIÓN: cerrar ROMERAL; extraer en carpeta NUEVA; ejecutar Abrir_en_Windows.bat. NO borrar Documentos\\ROMERAL_Datos. La contraseña y los datos permanecen allí o en el llavero de Windows.
+
+PRUEBA: Opciones > Facturación > DIAGNOSTICAR CAF PRODUCCIÓN · SOLO LECTURA. Compartir fotografía del resultado, nunca contraseñas ni valores privados.

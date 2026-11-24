@@ -1,0 +1,18 @@
+ROMERAL v2.9.0 — PREINTEGRACIÓN QR ONLINE
+
+Esta versión incorpora un módulo independiente de registro de QR online.
+- Botón «Ventas Online QR» en cabecera.
+- Acepta lector QR USB en modo teclado o ingreso manual.
+- Registra huella SHA-256 del QR en la base de datos existente, sin guardar el código completo.
+- Detecta códigos previamente registrados y muestra advertencia.
+- No realiza llamadas a la página web ni a Facturacion.com desde el módulo QR.
+- El botón de emitir boleta se muestra DESHABILITADO intencionalmente: un QR por sí solo NO acredita pago ni ausencia de DTE.
+- NO marca ingresos validados ni registra una venta contable por escanear.
+
+PARA ACTIVAR LA INTEGRACIÓN REAL
+El programador web debe facilitar API autenticada con pedido, estado de pago, fecha de visita, cantidad, importe y documento tributario asociado. Se deberá verificar con Facturacion.com si el pedido ya fue documentado antes de habilitar emisión y diseñar validación atómica de ingreso.
+
+SEGURIDAD Y PRUEBAS
+Respaldar ~/Documents/ROMERAL_Datos antes de abrir esta versión.
+Probar con códigos ficticios; NO emitir boletas reales para probar QR.
+Mantener v2.8.1 como respaldo. No se modifican cierres, ventas presenciales ni emisión DTE existente.

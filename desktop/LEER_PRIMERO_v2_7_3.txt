@@ -1,0 +1,5 @@
+ROMERAL v2.7.3 — Cabañas y Camping: cantidad de personas × valor libre POR PERSONA.
+El precio unitario se guarda en ventas.precio y el total calculado en ventas.total.
+Ventas anteriores conservan su monto y no se recalculan.
+La emisión y la impresión automática permanecen sin cambios.
+Respaldar ~/Documents/ROMERAL_Datos antes de instalar. Probar cálculos en pantalla sin registrar venta.

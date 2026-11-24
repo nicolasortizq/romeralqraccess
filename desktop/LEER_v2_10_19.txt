@@ -1,0 +1,1 @@
+ROMERAL v2.10.19: medición desglosada de latencia PDF y reporte últimas 10 ventas. Conserva emisión DTE, folios, bloqueos, esperas y formato térmico. No garantiza 6 segundos. Cerrar ROMERAL, respaldar carpeta anterior, extraer nueva carpeta. No borrar ROMERAL_Datos. No generar ventas ficticias en producción.

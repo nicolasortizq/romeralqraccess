@@ -1,0 +1,35 @@
+ROMERAL - CANDIDATO A PRIMERA EMISION REAL CONTROLADA
+
+IMPORTANTE: El modulo EMISION_REAL_CONTROLADA.py SI PUEDE invocar Procesar en produccion.
+No abrirlo hasta estar preparado para emitir un DTE39 real.
+No reemplazar la carpeta Documents/ROMERAL_Datos ni sus credenciales.
+
+ALCANCE:
+- Emision manual y unica de una venta ya registrada HOY por $10.000 CLP.
+- No crea ventas. No se integra aun al boton principal Registrar.
+- Respaldo SQLite antes de reservar.
+- Bitacora duradera de intento, sin reintentos automaticos.
+- Resultado incierto: revisar Facturacion.com y no reemitir.
+- Guarda XML recibido, folio confirmado y evidencia en base de datos.
+- Impresion de DTE tributario: NO automatizada en esta version.
+- El PDF debe recuperarse y verificarse en portal Facturacion.com.
+
+LIMITACIONES:
+- La aceptacion del TXT y del metodo Procesar aun no se ha validado en produccion.
+- No es posible probar la conexion con las credenciales de su Mac desde este entorno.
+- Requiere dependencias zeep, requests, keyring en el Python del Mac.
+- Si la respuesta SOAP tiene un formato distinto al documentado, quedara en revision.
+- Si la operacion falla despues de iniciar el envio, no se puede volver a intentar
+  con esa venta. Verifique el portal y concilie manualmente antes de seguir.
+
+PRIMER USO (SOLO CUANDO DECIDA REALIZAR LA PRUEBA REAL):
+1. Mantenga la version ROMERAL que ya funciona. Haga respaldo de ROMERAL_Datos.
+2. Registre UNA venta real por $10.000 con la fecha actual en ROMERAL.
+3. Revise su ID en Control DTE y cierre ROMERAL.
+4. Ejecute Abrir_Emision_Controlada_Mac.command de esta carpeta.
+5. Escriba el ID y la frase exacta EMITIR [ID] 10000.
+6. Confirme la emision una sola vez y revise Facturacion.com.
+7. No pulse de nuevo ante timeout o resultado incierto.
+
+NOTA: El documento fiscal real solo se considera validado despues de confirmar
+la emision en el proveedor. No confundir comprobante interno con boleta tributaria.

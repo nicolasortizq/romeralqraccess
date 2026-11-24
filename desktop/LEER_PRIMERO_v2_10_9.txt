@@ -1,0 +1,9 @@
+ROMERAL v2.10.9 - Corrección monto total Cabañas y Camping (Windows)
+
+CAMBIO: Para Cabañas y Camping se ingresa cantidad de personas y monto TOTAL manual. El monto no se multiplica por la cantidad. La columna precio almacena un valor unitario de referencia aproximado cuando no hay división exacta; el total real se mantiene intacto.
+
+Se conserva la integración SOAP y el bloqueo de seguridad de v2.10.8. No se habilita emisión real ni se cambian credenciales.
+
+ADVERTENCIA: no se ha realizado emisión productiva ni prueba en Windows. Mantener emision_habilitada=false hasta revisión y autorización. No sobrescribir Documents\ROMERAL_Datos.
+
+Instalación: extraer en una carpeta NUEVA; ejecutar Abrir_en_Windows.bat. No mezclar carpetas antiguas.

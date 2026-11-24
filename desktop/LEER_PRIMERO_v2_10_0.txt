@@ -1,0 +1,12 @@
+ROMERAL v2.10.0 - ETAPA 1: SIMULADOR AISLADO DE CONCILIACION PLANO
+
+Abrir: Abrir_Flujo_PLANO_v2_10_Windows.bat
+1. Crear una venta de prueba local (sin emitir boleta).
+2. Pegar el XML de respuesta de prueba PLANO ya obtenido.
+3. Validar resultado, DTE 39 y folio, y guardar la conciliacion en una base independiente.
+
+IMPORTANTE: Esta etapa NO hace llamadas SOAP ni emite boletas. NO altera la caja real ni las credenciales de produccion.
+No usar REGISTRAR VENTA de la aplicacion principal para pruebas: conserva el flujo anterior de produccion.
+La integracion automatica al flujo de ventas queda pendiente de una etapa posterior de pruebas.
+Datos de simulacion: Documentos\ROMERAL_Datos\pruebas_flujo_plano_v2_10.sqlite3
+No borrar Documentos\ROMERAL_Datos.

@@ -1,0 +1,5 @@
+ROMERAL v2.7.5 — Ajustes visuales.
+Campos de cantidad y valor por persona: amarillo suave y numeros rojos.
+Medios de pago: filas de altura fija, sin cambios de espaciado ni desplazamiento al seleccionar.
+Se conserva la emision, impresion automatica y reimpresion por folio.
+Antes de utilizar en produccion, comprobar la interfaz y respaldar ~/Documents/ROMERAL_Datos.

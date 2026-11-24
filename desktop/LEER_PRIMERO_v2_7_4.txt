@@ -1,0 +1,5 @@
+ROMERAL v2.7.4 — Mejoras visuales y de caja
+Reloj visible, pago seleccionado de alto contraste, botón naranja y valor monetario con $ y puntos.
+No modifica la integración tributaria ni los registros previos.
+Respaldar ~/Documents/ROMERAL_Datos antes de instalar.
+Probar la interfaz sin emitir DTE real.
