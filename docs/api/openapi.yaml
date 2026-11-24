@@ -1,0 +1,501 @@
+openapi: 3.1.0
+info:
+  title: romeralQRAccess API
+  version: 0.1.0
+  description: >
+    API del backend de romeralQRAccess para la Fase 1 (entradas online con
+    QR). La aplicación local del acceso consulta, busca y canjea entradas,
+    e informa el folio de la boleta emitida. WooCommerce notifica los
+    pedidos pagados a través de un webhook firmado.
+  contact:
+    name: Nico
+servers:
+  - url: https://acceso.vallederomeral.cl
+    description: Producción
+
+security:
+  - apiKeyAuth: []
+
+tags:
+  - name: entradas
+    description: Consulta, búsqueda, canje y registro de boleta de entradas online.
+  - name: woocommerce
+    description: Recepción de pedidos pagados desde WooCommerce.
+
+paths:
+  /api/v1/tickets/{code}:
+    get:
+      tags: [entradas]
+      operationId: getTicketByCode
+      summary: Consultar una entrada por su código QR
+      description: >
+        Busca la entrada cuyo código (el contenido leído del QR) coincide
+        con el código guardado. El backend compara por el hash SHA-256 del
+        código recibido, nunca guarda el código en texto plano. No cambia
+        el estado de la entrada.
+      parameters:
+        - $ref: '#/components/parameters/CodePathParam'
+      responses:
+        '200':
+          description: Entrada encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnlineTicket'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No existe ninguna entrada con ese código.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/tickets:
+    get:
+      tags: [entradas]
+      operationId: searchTickets
+      summary: Buscar entradas por número de pedido o correo
+      description: >
+        Búsqueda manual para cuando el QR no se puede leer. Se debe
+        indicar al menos uno de los dos parámetros. Si se indican ambos,
+        el resultado cumple ambas condiciones.
+      parameters:
+        - name: order
+          in: query
+          description: Número de pedido de WooCommerce (`woo_order_number`).
+          required: false
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: Correo del comprador (`buyer_email`).
+          required: false
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: >
+            Entradas que coinciden con la búsqueda. Puede ser un arreglo
+            vacío si no hay coincidencias.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnlineTicket'
+        '400':
+          description: No se indicó ni `order` ni `email`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/tickets/{code}/redeem:
+    post:
+      tags: [entradas]
+      operationId: redeemTicket
+      summary: Canjear una entrada
+      description: >
+        Marca la entrada como canjeada de forma atómica: si dos
+        solicitudes llegan a la vez para el mismo código, solo una tiene
+        éxito. El canje es total, para todas las personas de la entrada;
+        no existen canjes parciales.
+      parameters:
+        - $ref: '#/components/parameters/CodePathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedeemRequest'
+      responses:
+        '200':
+          description: Entrada canjeada. Queda en estado `REDEEMED`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnlineTicket'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No existe ninguna entrada con ese código.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: >
+            La entrada ya no se puede canjear: ya estaba canjeada
+            (`REDEEMED`), anulada (`CANCELLED`) o fue reembolsada después
+            de canjeada (`REFUNDED_AFTER_REDEMPTION`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/tickets/{code}/invoice:
+    post:
+      tags: [entradas]
+      operationId: reportTicketInvoice
+      summary: Informar el resultado de la boleta
+      description: >
+        La aplicación local llama a este endpoint después de emitir (o
+        intentar emitir) la boleta en Facturacion.cl, para dejar
+        registrado el folio o marcar la boleta como pendiente de revisión
+        por el supervisor.
+      parameters:
+        - $ref: '#/components/parameters/CodePathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceReportRequest'
+      responses:
+        '200':
+          description: Boleta registrada en la entrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnlineTicket'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: No existe ninguna entrada con ese código.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/woocommerce/webhook:
+    post:
+      tags: [woocommerce]
+      operationId: receiveWooCommerceWebhook
+      summary: Recibir un pedido pagado desde WooCommerce
+      description: >
+        WooCommerce llama a este endpoint cuando un pedido pasa a estado
+        "Procesando" o "Completado". El backend valida la firma del
+        encabezado `X-WC-Webhook-Signature` en vez de la clave de
+        terminal, crea la entrada y envía el correo con el QR al
+        comprador.
+      security:
+        - webhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WooCommerceOrderPaidPayload'
+      responses:
+        '200':
+          description: Pedido aceptado y entrada creada (o ya existente para ese pedido).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+        '401':
+          description: Firma ausente o inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Terminal-Key
+      description: >
+        Clave de la terminal del acceso. Cada terminal tiene su propia
+        clave; el backend solo guarda su hash.
+    webhookSignature:
+      type: apiKey
+      in: header
+      name: X-WC-Webhook-Signature
+      description: >
+        Firma HMAC-SHA256 en Base64 que WooCommerce calcula sobre el
+        cuerpo de la solicitud con el secreto configurado en el webhook.
+
+  parameters:
+    CodePathParam:
+      name: code
+      in: path
+      required: true
+      description: >
+        Código leído del QR (prefijo `VR1`, solo mayúsculas y números). El
+        backend lo compara por su hash SHA-256.
+      schema:
+        type: string
+        pattern: '^VR1[A-Z0-9]+$'
+        example: VR1K7M2Q9XW4TB8N3HD6PA5RC
+
+  responses:
+    Unauthorized:
+      description: Clave de terminal ausente o inválida.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: Mensaje de error en español, para mostrar o registrar.
+          example: La entrada ya fue canjeada.
+
+    OnlineTicketLine:
+      type: object
+      description: Línea de detalle de precios de una entrada online.
+      required:
+        - woo_product_id
+        - product_name
+        - quantity
+        - unit_price
+        - line_total
+      properties:
+        woo_product_id:
+          type: integer
+          description: ID del producto en WooCommerce.
+          example: 142
+        product_name:
+          type: string
+          description: Nombre del producto al momento de la compra.
+          example: Entrada General
+        quantity:
+          type: integer
+          minimum: 1
+          example: 3
+        unit_price:
+          type: integer
+          description: Precio unitario en pesos chilenos (CLP), sin decimales.
+          example: 12000
+        line_total:
+          type: integer
+          description: Subtotal de la línea en CLP (`quantity` por `unit_price`).
+          example: 36000
+
+    OnlineTicket:
+      type: object
+      description: Entrada online generada a partir de un pedido pagado en WooCommerce.
+      required:
+        - id
+        - woo_order_id
+        - woo_order_number
+        - buyer_name
+        - buyer_email
+        - people_count
+        - total_paid
+        - payment_method
+        - purchased_at
+        - season_id
+        - valid_until
+        - status
+        - invoice_status
+        - source
+        - created_at
+        - updated_at
+        - lines
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identificador interno de la entrada.
+        woo_order_id:
+          type: integer
+          description: ID del pedido en WooCommerce.
+          example: 10452
+        woo_order_number:
+          type: string
+          description: Número de pedido visible para el comprador.
+          example: "10452"
+        buyer_name:
+          type: string
+          description: Nombre del comprador.
+          example: María Pérez
+        buyer_email:
+          type: string
+          format: email
+          description: Correo del comprador.
+          example: maria.perez@example.com
+        people_count:
+          type: integer
+          description: Cantidad de personas que cubre la entrada.
+          minimum: 1
+          example: 3
+        total_paid:
+          type: integer
+          description: Total pagado en pesos chilenos (CLP), sin decimales.
+          example: 36000
+        payment_method:
+          type: string
+          description: Medio de pago usado en WooCommerce.
+          example: Webpay
+        purchased_at:
+          type: string
+          format: date-time
+          description: Fecha y hora en que el pedido quedó pagado.
+        season_id:
+          type: integer
+          description: Temporada a la que pertenece la entrada.
+          example: 1
+        valid_until:
+          type: string
+          format: date
+          description: Fecha de término de vigencia (fin de la temporada de compra).
+        status:
+          type: string
+          description: Estado de la entrada.
+          enum: [VALID, REDEEMED, CANCELLED, REFUNDED_AFTER_REDEMPTION]
+          example: VALID
+        redeemed_at:
+          type: ["string", "null"]
+          format: date-time
+          description: Fecha y hora del canje. Nulo si la entrada no se ha canjeado.
+        redeemed_by:
+          type: ["string", "null"]
+          description: >
+            Identifica el canje como "terminal:usuario". Nulo si la
+            entrada no se ha canjeado.
+          example: "acceso-1:jperez"
+        invoice_status:
+          type: string
+          description: Estado de la boleta asociada al canje.
+          enum: [NOT_ISSUED, ISSUED, PENDING_REVIEW]
+          example: NOT_ISSUED
+        invoice_folio:
+          type: ["string", "null"]
+          description: Folio de la boleta emitida en Facturacion.cl. Nulo si no se ha emitido.
+        source:
+          type: string
+          description: Origen de creación de la entrada.
+          enum: [WEBHOOK, RECONCILIATION, IMPORT]
+          example: WEBHOOK
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        lines:
+          type: array
+          description: Detalle de productos y precios del pedido.
+          items:
+            $ref: '#/components/schemas/OnlineTicketLine'
+
+    RedeemRequest:
+      type: object
+      required: [terminal, redeemed_by]
+      properties:
+        terminal:
+          type: string
+          description: Nombre de la terminal del acceso que realiza el canje.
+          example: acceso-1
+        redeemed_by:
+          type: string
+          description: Usuario (cajero o supervisor) que realiza el canje.
+          example: jperez
+
+    InvoiceReportRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          description: Resultado de la emisión de la boleta.
+          enum: [ISSUED, PENDING_REVIEW]
+          example: ISSUED
+        folio:
+          type: ["string", "null"]
+          description: Folio de la boleta emitida. Nulo si quedó pendiente de revisión.
+          example: "26193"
+
+    WooCommerceOrderPaidLineItem:
+      type: object
+      description: Línea de producto dentro del pedido de WooCommerce.
+      required:
+        - product_id
+        - name
+        - quantity
+        - total
+      properties:
+        product_id:
+          type: integer
+          example: 142
+        name:
+          type: string
+          example: Entrada General
+        quantity:
+          type: integer
+          example: 3
+        total:
+          type: string
+          description: Subtotal de la línea en CLP, como lo entrega WooCommerce.
+          example: "36000"
+
+    WooCommerceOrderPaidPayload:
+      type: object
+      description: >
+        Subconjunto del payload que WooCommerce envía al webhook de
+        pedido actualizado, para un pedido que acaba de quedar pagado.
+      required:
+        - id
+        - number
+        - status
+        - billing
+        - line_items
+        - total
+        - date_paid
+      properties:
+        id:
+          type: integer
+          description: ID del pedido en WooCommerce.
+          example: 10452
+        number:
+          type: string
+          description: Número de pedido visible para el comprador.
+          example: "10452"
+        status:
+          type: string
+          description: Estado del pedido.
+          enum: [processing, completed]
+          example: processing
+        billing:
+          type: object
+          description: Datos de facturación del comprador.
+          required: [first_name, last_name, email]
+          properties:
+            first_name:
+              type: string
+              example: María
+            last_name:
+              type: string
+              example: Pérez
+            email:
+              type: string
+              format: email
+              example: maria.perez@example.com
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WooCommerceOrderPaidLineItem'
+        total:
+          type: string
+          description: Total pagado del pedido en CLP, como lo entrega WooCommerce.
+          example: "36000"
+        date_paid:
+          type: string
+          format: date-time
+          description: Fecha y hora en que el pedido quedó pagado.
