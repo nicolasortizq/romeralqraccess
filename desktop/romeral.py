@@ -23,6 +23,7 @@ from registro_dte import crear_tabla as crear_control_emision, registrar_venta a
 from conciliacion_dte import preparar as preparar_conciliacion
 import ventas_online
 from canje_online import CanjeOnlineController
+from tipos_venta import TIPO_VENTA_ONLINE
 from datetime import datetime
 from pathlib import Path
 import tkinter as tk
@@ -758,7 +759,7 @@ class Romeral(tk.Tk):
   with conn:
    cursor=conn.execute(
     "INSERT INTO ventas(fecha,cantidad,precio,total,medio,tipo,estado_boleta,referencia_venta,tipo_dte,origen) VALUES (?,?,?,?,?,?,?,?,?,?)",
-    (datetime.now().isoformat(timespec='seconds'),cantidad,total//max(cantidad,1),total,'Webpay','Entrada General','PENDIENTE_INTEGRACION',str(uuid.uuid4()),39,'ONLINE'))
+    (datetime.now().isoformat(timespec='seconds'),cantidad,total//max(cantidad,1),total,'Webpay',TIPO_VENTA_ONLINE,'PENDIENTE_INTEGRACION',str(uuid.uuid4()),39,'ONLINE'))
    referencia=conn.execute('SELECT referencia_venta FROM ventas WHERE id=?',(cursor.lastrowid,)).fetchone()[0]
    registrar_control_emision(conn,cursor.lastrowid,referencia)
    conn.execute('INSERT INTO eventos_dte(venta_id,fecha,evento,detalle) VALUES (?,?,?,?)',

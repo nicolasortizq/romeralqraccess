@@ -49,8 +49,12 @@ MAX_POLL_ATTEMPTS = 400  # 400 * 300ms ~= 120s
 # How many times to attempt reporting the invoice result to the backend
 # before giving up and only logging the failure. The redemption and local
 # sale have already succeeded by this point, so a report_invoice failure
-# must never block or crash the cashier's screen.
-REPORT_INVOICE_ATTEMPTS = 2
+# must never block or crash the cashier's screen. A single attempt, same as
+# emitir_automaticamente()'s own SOAP call elsewhere in this codebase ("Un
+# solo intento SOAP por venta, sin confirmaciones adicionales ni reenvíos"):
+# a retry here would double the UI-thread blocking time on an unreachable
+# backend without actually fixing the underlying blocking call.
+REPORT_INVOICE_ATTEMPTS = 1
 
 
 class CanjeOnlineController:
@@ -86,8 +90,13 @@ class CanjeOnlineController:
             return 'No se puede canjear: revisa las condiciones de emisión antes de continuar.'
         if self.app.emision_en_curso:
             return 'Espera el resultado de la boleta anterior antes de canjear otra entrada.'
+        # Read outside the try: an AttributeError here has nothing to do with
+        # redeem_ticket's HTTP call (no request has been sent yet), so it must
+        # not be folded into the ambiguous-redemption-state message below.
+        terminal_nombre = self.app.terminal_nombre
+        operador_actual = self.app.operador_actual
         try:
-            resultado = ventas_online.redeem_ticket(code, self.app.terminal_nombre, self.app.operador_actual)
+            resultado = ventas_online.redeem_ticket(code, terminal_nombre, operador_actual)
         except TicketAlreadyRedeemedError as exc:
             return str(exc)
         except Exception as exc:
@@ -160,8 +169,10 @@ class CanjeOnlineController:
         `report_invoice` runs on the UI thread and can block up to
         TIMEOUT_SECONDS; by the time this is called, the redemption and the
         local sale have already succeeded, so a reporting failure here must
-        not crash or block the cashier's screen. Retries once, then only
-        logs a warning so the gap is visible without losing the sale.
+        not crash or block the cashier's screen. A single attempt
+        (REPORT_INVOICE_ATTEMPTS); on failure this only logs a warning so the
+        gap is visible without losing the sale or doubling the UI-thread
+        blocking time.
         """
         if estado == ESTADO_BOLETA_EMITIDA and folio:
             status, folio_a_reportar = INVOICE_STATUS_ISSUED, folio

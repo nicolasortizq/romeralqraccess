@@ -1,12 +1,19 @@
 """Regression test for the `tipo` value `registrar_venta_online()` writes.
 
 `romeral.py`'s `registrar_venta_online()` (desktop/romeral.py) always writes
-`tipo='Entrada General'` for an online redemption, instead of the earlier
-`'Entrada Online'`. The reason is `VentaBoleta.validar()`
-(desktop/integracion_facturacion.py): it only accepts a fixed set of
-`tipo` values and raises `ValueError` on anything else, which would make
-`emitir_automaticamente()` fail on every single online redemption if the
-inserted row's `tipo` were not one of those accepted values.
+`tipo=TIPO_VENTA_ONLINE` (currently `'Entrada General'`) for an online
+redemption, instead of the earlier `'Entrada Online'`. The reason is
+`VentaBoleta.validar()` (desktop/integracion_facturacion.py): it only
+accepts a fixed set of `tipo` values and raises `ValueError` on anything
+else, which would make `emitir_automaticamente()` fail on every single
+online redemption if the inserted row's `tipo` were not one of those
+accepted values.
+
+This test imports `TIPO_VENTA_ONLINE` from `tipos_venta.py` — the same
+constant `registrar_venta_online()` uses for its insert — instead of a
+hand-typed copy of the literal, so a future regression in that constant's
+value is what actually makes this test fail, not a coincidentally-matching
+string here.
 
 This module never imports `romeral` (see desktop/conftest.py's docstring
 for why) or touches sqlite; it exercises `VentaBoleta.validar()` directly
@@ -17,11 +24,12 @@ Tkinter app instance.
 import pytest
 
 from integracion_facturacion import VentaBoleta
+from tipos_venta import TIPO_VENTA_ONLINE
 
 
 def test_entrada_general_with_webpay_is_accepted():
     """The exact tipo/medio combination registrar_venta_online() inserts."""
-    venta = VentaBoleta(referencia='VR1TESTCODE', tipo='Entrada General',
+    venta = VentaBoleta(referencia='VR1TESTCODE', tipo=TIPO_VENTA_ONLINE,
                          personas=2, total=20000, medio='Webpay')
     venta.validar()  # must not raise
 
