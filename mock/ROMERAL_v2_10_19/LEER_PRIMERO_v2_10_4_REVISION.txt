@@ -1,0 +1,10 @@
+ROMERAL v2.10.4 - Revision conservadora para Windows
+
+Se corrigio el flujo de impresion automatica para utilizar una copia a 80 mm del PDF oficial completo de Facturacion.com, sin reconstruir datos tributarios ni extraer timbres heurísticamente. El original se conserva.
+Se corrigio el nombre del evento de impresion para no referirse a CUPS en Windows.
+
+IMPORTANTE: NO SE HA VERIFICADO EMISION REAL NI IMPRESION FISICA EN ESTE EQUIPO.
+La recuperacion del PDF depende de la respuesta real del proveedor y requiere conciliacion previa del DTE. La instalacion de SumatraPDF y la configuracion exacta de impresora siguen siendo necesarias.
+No reintentar ventas cuyo estado sea incierto. No borrar ROMERAL_Datos.
+
+Instalar en carpeta nueva, conservando ROMERAL_Datos; verificar con una venta autorizada antes de operar con publico.

@@ -1,0 +1,21 @@
+ROMERAL v2.5 — HISTORIAL DE INGRESOS + IMPRESIÓN DIRECTA DEL PDF OFICIAL
+
+CAMBIOS:
+1. Historial muestra por separado fecha y hora de ingreso (momento de registrar venta), con segundos. La fecha/hora de emisión DTE aparece en columna independiente cuando está guardada.
+2. El botón «PDF boleta» permite seleccionar un PDF OFICIAL descargado de Facturacion.com y enviarlo directamente a la cola de impresión de macOS/Linux mediante lp, sin modificar el PDF ni su timbre. En Windows usa la acción de impresión de la aplicación PDF predeterminada.
+3. El emisor SOAP y la protección contra reenvíos permanecen intactos.
+
+IMPORTANTE — LÍMITE ACTUAL:
+La recuperación automática del PDF desde Facturacion.com NO ESTÁ IMPLEMENTADA: falta confirmar la API de descarga de boletas oficiales. Por ello todavía hay que descargar y seleccionar el PDF. NO es una impresión totalmente automática al registrar la venta. La hora de ingreso se registra localmente y NO se inserta artificialmente en el PDF tributario oficial.
+
+IMPRESORA:
+En Mac, por defecto se utiliza la impresora predeterminada del sistema. Configura POS-80 como predeterminada en macOS, o bien registra en la tabla config de ROMERAL la clave impresora_80mm con el nombre EXACTO de la cola CUPS. No modificar la base sin respaldo. El comando lp envía el PDF original, pero la escala/ancho de papel dependen del controlador de la impresora. Comprueba la salida física sin emitir una nueva boleta.
+
+INSTALACIÓN:
+1. Cerrar ROMERAL y respaldar ~/Documents/ROMERAL_Datos.
+2. Descomprimir el ZIP en carpeta nueva.
+3. Ejecutar Abrir_en_Mac.command.
+4. Abrir Historial y comprobar las columnas de fecha/hora.
+5. Para imprimir una boleta ya emitida, pulsar PDF boleta, seleccionar su PDF oficial y confirmar.
+
+No borrar ni reemplazar ~/Documents/ROMERAL_Datos. No se incluyen credenciales ni bases de datos. No se emitieron nuevas boletas durante la preparación de esta versión. Sintaxis Python comprobada; impresión física no probada en el equipo del usuario.

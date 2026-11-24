@@ -1,0 +1,9 @@
+ROMERAL v2.9.5 | WINDOWS 1024x768 | Diagnóstico de vencimiento textual
+
+CAMBIO: reconoce exclusivamente el texto NO VENCE (con espacios y sin distinguir mayúsculas) del campo fechavencimiento del proveedor. No se interpreta como una fecha ni como autorización oficial de emisión. Sigue informando la ausencia de criterio oficial de autenticación.
+
+SEGURIDAD: la emisión real permanece BLOQUEADA. La consulta CAF es SOLO LECTURA y NO invoca Procesar. No se incluye el CAF XML ni las claves privadas en este ZIP.
+
+INSTALACIÓN: cierre la versión anterior; extraiga el ZIP en una carpeta nueva; abra Abrir_en_Windows.bat. No borre Documentos\ROMERAL_Datos ni reconfigure su contraseña o impresora.
+
+PRUEBA: Opciones > Facturación > Diagnosticar CAF producción · Solo lectura. Verificar que aparezca 'Vencimiento informado por proveedor: NO VENCE'. Si no aparece, comparta una fotografía del diagnóstico sin credenciales.

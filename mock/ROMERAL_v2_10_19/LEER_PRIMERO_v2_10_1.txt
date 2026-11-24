@@ -1,0 +1,16 @@
+ROMERAL v2.10.1 - PRUEBA INTEGRADA PLANO
+
+1. Ejecuta INSTALAR_WINDOWS.bat si es la primera instalacion de esta carpeta.
+2. Ejecuta Abrir_Flujo_PLANO_v2_10_1_Windows.bat.
+3. Presiona PREPARAR VENTA DE PRUEBA y revisa el TXT antes de enviar.
+4. No presiones ENVIAR hasta revisar la vista previa y confirmar que deseas crear otra boleta de prueba.
+5. Una vez enviada, el sistema registra el resultado y el folio automaticamente cuando el XML confirma exito.
+
+IMPORTANTE:
+- Esta herramienta NO modifica las ventas reales, NO imprime y NO utiliza produccion.
+- Cada envio de prueba puede generar un nuevo folio PLANO.
+- Si ocurre timeout, cierre o respuesta ambigua: NO reintentar, verificar primero el portal de pruebas.
+- La base aislada esta en Documentos/ROMERAL_Datos/pruebas_integradas_plano_v2_10_1.sqlite3.
+- No borres Documentos/ROMERAL_Datos.
+- No uses REGISTRAR VENTA de la aplicacion principal para pruebas.
+- NO es aun una version de produccion.

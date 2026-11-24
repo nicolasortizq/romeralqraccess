@@ -1,0 +1,10 @@
+ROMERAL 2.2 - CONCILIACIÓN LOCAL SEGURA
+
+1. Cierra ROMERAL. Conserva la versión anterior y haz respaldo de ROMERAL_Datos.
+2. En la carpeta descomprimida ejecuta: python3 PRUEBA_CONCILIACION.py
+3. Debe decir Ran 13 tests y OK.
+4. Luego abre Abrir_en_Mac.command. No registres ventas de prueba.
+
+NOVEDAD: conciliacion_dte.py incorpora estados locales y bitácora de conciliación; la aplicación crea una tabla adicional sin eliminar ventas ni cierres.
+El módulo de conciliación NO está conectado a respuestas reales del proveedor ni habilita Procesar. La API confirmar_respuesta_verificada solo debe invocarse tras verificar oficialmente formato y respuesta. No equivale a una emisión real.
+No ejecutar pruebas contra base de datos de producción.

@@ -1,0 +1,14 @@
+ROMERAL v2.10.2 - CUATRO MODALIDADES EN PLANO
+
+1. Extraer en carpeta nueva. Ejecutar INSTALAR_WINDOWS.bat si falta .venv.
+2. Abrir Abrir_Flujo_PLANO_v2_10_2_Windows.bat.
+3. Elegir modalidad y medio de pago.
+4. Entrada General y Piscina Temperada: valor UNITARIO x personas.
+5. Cabanas y Camping: monto TOTAL manual, independiente de personas.
+6. PREPARAR genera vista previa, no emite.
+7. ENVIAR genera DTE 39 REAL DEL AMBIENTE DE PRUEBAS PLANO (solo con confirmacion).
+8. No reenviar ante timeout o error; revisar estado en portal PLANO.
+9. No modifica caja real ni activa produccion. No imprime.
+10. La BD de pruebas v2_10_2 es nueva e independiente; se conservan las anteriores.
+
+IMPORTANTE: probar primero PREPARAR y revisar TXT antes de enviar.

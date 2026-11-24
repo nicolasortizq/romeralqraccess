@@ -1,0 +1,13 @@
+ROMERAL v2.7.6 — Control conservador de folios DTE 39
+
+- Nuevo botón Folios DTE, protegido por contraseña de supervisor.
+- Alerta visible cuando el mensaje del proveedor informa explícitamente falta de folios.
+- Registro local en ~/Documents/ROMERAL_Datos/romeral_alertas_folios.jsonl.
+- No inventa un saldo, no confunde errores de red con agotamiento.
+- No reintenta la emisión ni modifica folios o ventas históricas.
+- Las alertas preventivas por umbral (500/100) requieren confirmar primero
+  que Facturacion.com exponga un saldo fiable mediante API.
+- IMPORTANTE: el estado 'posible agotamiento' exige revisar el portal;
+  no equivale a confirmar el estado tributario de la venta.
+
+Para probar sin emitir DTE: abrir ROMERAL y usar Folios DTE con clave supervisor.

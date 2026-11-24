@@ -1,0 +1,5 @@
+ROMERAL v2.6.6 - Corrección de detección de impresora CUPS en macOS en español.
+
+La salida de lpstat -p en español dice «la impresora Printer_POS_80», no «printer Printer_POS_80». Esta versión reconoce ambas variantes y prefiere la cola exacta Printer_POS_80.
+
+Cierra ROMERAL, respalda Documentos/ROMERAL_Datos, ejecuta Abrir_en_Mac.command y utiliza Reimprimir DTE con venta 6 (folio 26185). No emite otro DTE. Comprueba físicamente la impresión y la legibilidad del timbre.

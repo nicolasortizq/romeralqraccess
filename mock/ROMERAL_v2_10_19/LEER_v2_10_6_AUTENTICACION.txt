@@ -1,0 +1,9 @@
+ROMERAL v2.10.6 - Verificacion no emisora de credenciales productivas
+
+Ejecute Verificar_Autenticacion_Produccion_SOLO_LECTURA.bat en Windows.
+Consulta mediante ObtenerLink una boleta DTE 39 EXISTENTE, folio 26185.
+No llama Procesar, no cambia emision_habilitada, no crea ventas ni folios.
+No imprime ni descarga el PDF.
+Un resultado exitoso demuestra acceso a ObtenerLink, NO habilitacion de Procesar.
+Mantenga emision_habilitada=false hasta revisar el resultado y las protecciones.
+La interfaz de caja se mantiene sin modificaciones.

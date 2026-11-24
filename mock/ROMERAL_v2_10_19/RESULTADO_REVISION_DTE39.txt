@@ -1,0 +1,8 @@
+ROMERAL - Revisión de formato TXT y respuesta SOAP (17-11-2026)
+
+1. Se verificó la estructura de etiquetas y campos contra el manual público de Facturacion.cl. Se agregó VALIDACION_DTE39.py y se conecta antes de reservar o enviar la venta. Esto NO equivale a aceptación del proveedor.
+2. Se reforzó el análisis de respuestas XML: solo confirma un documento DTE 39 con éxito global, éxito individual y folio positivo. Errores, respuestas múltiples o ambiguas requieren revisión manual.
+3. La aplicación sigue bloqueando reintentos y preserva la evidencia SOAP.
+4. NO se realizó ningún envío de producción, no se asignó folio y no se modificó la base de datos del usuario.
+5. La venta N.º 5 por $10.000 debe mantenerse pendiente. No ejecutar EMITIR sin revisar condiciones de operación; la aceptación real solo puede verificarse con una transmisión controlada y el portal del proveedor.
+Fuentes: https://www.facturacion.cl/manualintegracion/archivoboletaelectronica.php y https://www.facturacion.cl/manualintegracion/integracionservicioweb.php

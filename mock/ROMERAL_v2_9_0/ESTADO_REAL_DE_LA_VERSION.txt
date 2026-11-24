@@ -1,0 +1,16 @@
+ROMERAL - Candidato técnico de integración (NO ES VERSION DE EMISION FINAL)
+
+Este paquete consolida ROMERAL 2.2 y los módulos de preparación TXT,
+interpretación SOAP, conciliación y bitácora de intentos.
+
+IMPORTANTE:
+- NO se ha confirmado que el TXT DTE 39 sea aceptado por Facturacion.com.
+- NO se ha verificado el esquema real de respuesta de Procesar.
+- NO existe todavía envío productivo conectado al botón Registrar.
+- NO se ha emitido ninguna boleta desde este paquete.
+- No reemplazar la instalación actual ni usar este paquete para emitir.
+
+La bitácora registro_intentos_soap.py es una base para integrar el envío
+con bloqueo de reintentos. No es una función de emisión completa.
+
+No se incluyen contraseñas ni bases de datos del usuario.

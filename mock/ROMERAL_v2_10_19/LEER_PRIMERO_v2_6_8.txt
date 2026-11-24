@@ -1,0 +1,15 @@
+ROMERAL v2.6.8 — REIMPRESIÓN POR FOLIO OFICIAL
+
+1. Cierra ROMERAL y respalda ~/Documents/ROMERAL_Datos (incluida la base de datos).
+2. Descomprime esta versión y ejecuta Abrir_en_Mac.command.
+3. Presiona "Reimprimir boleta · Folio" e ingresa 26185 (folio DTE 39 de la venta interna 6).
+4. Verifica los datos de la venta antes de confirmar la reimpresión.
+5. Comprueba que el documento salga en formato térmico por Printer_POS_80.
+
+SEGURIDAD:
+- El número solicitado es el FOLIO oficial del DTE 39, NO el número interno de venta.
+- La búsqueda exige un único registro local con estado EMITIDA, tipo DTE 39 y folio coincidente.
+- Reimprimir no invoca Procesar ni emite una nueva boleta.
+- El evento REIMPRESION_SOLICITADA se registra en eventos_dte solo después de que el trabajo sea aceptado para impresión. Esto NO acredita la impresión física.
+- Las ventas, los folios y los cierres previos se conservan.
+- No es necesario realizar una nueva venta real para esta comprobación.

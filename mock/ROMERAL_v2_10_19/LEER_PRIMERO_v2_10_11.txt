@@ -1,0 +1,9 @@
+ROMERAL v2.10.11 - Emisión única real autorizada ($12.000, Efectivo, 1 Entrada General).
+
+NO REEMPLAZAR DATOS. NO cambiar emision_habilitada=false.
+Cerrar ROMERAL. Ejecutar EMISION_UNICA_REAL_12000_Windows.bat una sola vez.
+Esta operación genera una venta real y llama Procesar en producción, con posible efecto tributario.
+La autorización queda persistida en la base SQLite. No repetir ante error o resultado incierto.
+La emisión general permanece bloqueada.
+IMPORTANTE: La impresión automática de esta ruta excepcional no está activada. Confirmar folio en portal y reimprimir PDF oficial mediante la opción existente.
+Antes de usar, respaldar ROMERAL_Datos.

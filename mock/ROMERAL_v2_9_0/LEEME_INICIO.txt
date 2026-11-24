@@ -1,0 +1,34 @@
+VALLE DE ROMERAL SPA — ROMERAL 2.0 RC1 (candidato a versión final)
+RUT: 78.180.502-5
+
+ESTADO: no es una certificación de funcionamiento en producción.
+Consolidación de ROMERAL 1.18, sin nuevas funciones ni emisión electrónica.
+
+ANTES DE USAR:
+1. Cerrar todas las ventanas ROMERAL.
+2. Ejecutar python3 RESPALDAR_DATOS.py en Mac (o py -3 RESPALDAR_DATOS.py en Windows).
+   Confirmar que la carpeta de respaldo aparece en Documentos.
+3. Extraer este ZIP en una carpeta nueva FUERA de ROMERAL_Datos.
+4. Ejecutar python3 VERIFICAR_INSTALACION.py (o py -3 en Windows).
+5. Abrir Abrir_en_Mac.command o Abrir_en_Windows.bat.
+6. Revisar los precios guardados, modalidades, clave supervisor y el historial.
+7. Confirmar 4 anulaciones de prueba, 1 cierre 2026-11-16 y 0 ventas activas
+   SOLO si no se registraron nuevas ventas desde la última revisión.
+8. Probar impresora física 80 mm y Windows táctil ANTES de declarar la versión final.
+
+IMPORTANTE:
+- La emisión electrónica NO está habilitada. No sustituye boletas del SII.
+- No enviar ventas reales sin cumplir obligaciones de documentación tributaria
+  mediante el procedimiento vigente que corresponda.
+- Facturacion.com: esperar respuesta oficial sobre autenticación, CAF, folios,
+  emisión, confirmación y recuperación de transacciones ambiguas.
+- No copiar contraseñas ni datos del llavero en el ZIP.
+- No sobrescribir ni borrar ~/Documents/ROMERAL_Datos.
+- La aplicación sigue guardando en ~/Documents/ROMERAL_Datos.
+
+PRUEBAS PENDIENTES PARA APROBACIÓN FINAL:
+[ ] Instalación en Windows táctil
+[ ] Impresión física de 80 mm
+[ ] Apertura y respaldo/recuperación de SQLite en equipo de destino
+[ ] Registro controlado de una venta y conciliación con medio de pago
+[ ] Validación tributaria oficial y primera emisión expresamente autorizada

@@ -1,0 +1,19 @@
+ROMERAL v2.9.2 - AJUSTE DE PANTALLA TACTIL WINDOWS 1024x768
+
+Esta version incorpora un diseño compacto de la pantalla principal cuando Windows informa una pantalla de 1100 pixeles de ancho o menos, o 800 pixeles de alto o menos.
+
+Cambios: encabezado y navegacion compactos; modalidades de entrada en cuadricula de dos columnas con igual ancho; teclado numerico adaptable; pagos visibles; resumen compacto; REGISTRAR VENTA siempre en la zona inferior derecha. No se han modificado las rutinas de facturacion ni los datos de ventas.
+
+INSTALACION:
+1. Cerrar ROMERAL anterior.
+2. Descomprimir el ZIP en una carpeta NUEVA, no encima de la anterior.
+3. Ejecutar INSTALAR_WINDOWS.bat (requiere Python 3.12).
+4. Ejecutar Abrir_en_Windows.bat.
+5. Confirmar que el encabezado indique v2.9.2 y probar botones sin emitir boletas reales.
+
+IMPORTANTE:
+- La version anterior debe conservarse como respaldo.
+- No se ha probado fisicamente en el equipo del usuario; verificar visualmente en 1024x768.
+- El modulo QR sigue siendo una preintegracion sin verificacion online.
+- No ejecutar pruebas que emitan DTE reales sin autorizacion y validacion previa.
+- Si algun cuadro secundario supera el tamaño de pantalla, reportarlo para una correccion posterior.

@@ -1,0 +1,11 @@
+ROMERAL v2.7.7 - Monitor de folios CAF DTE 39
+
+NOVEDAD: consulta de solo lectura ConsultarCAF en segundo plano al iniciar y cada 15 minutos. Barra de estado y panel supervisor con rangos, siguiente folio, estimacion e historial local.
+
+ATENCION: el saldo mostrado es una ESTIMACION basada en el rango y el folio siguiente que informa Facturacion.com. No es una certificacion de folios efectivamente disponibles, especialmente si existen CAF vencidos, consumos externos, reservas o respuestas incompletas. Si la consulta no es valida, muestra 'Saldo no disponible' y no inventa cantidades.
+
+No se emite ningun DTE para consultar el CAF. No se cambian las funciones de venta, impresion ni reimpresion.
+
+Validar primero el panel Folios DTE, sin registrar venta. Verificar los rangos y cifras con el portal Facturacion.com antes de confiar en el aviso preventivo. Si la consulta falla, enviar el mensaje visible del panel sin contrasenas.
+
+No borrar ~/Documents/ROMERAL_Datos. Respaldar antes de instalar.

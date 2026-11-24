@@ -1,0 +1,22 @@
+ROMERAL 2.0 RC1 - Preparación de preemisión local
+
+Este paquete conserva la aplicación original SIN HABILITAR EMISIÓN.
+Se agrega CONTROL_PREEMISION.py, que simula la reserva única de una referencia,
+la gestión de respuestas inciertas y la confirmación de folios en una base de
+memoria temporal. No consulta Facturacion.com, no usa contraseñas y no modifica
+ROMERAL_Datos.
+
+Mac: abrir Terminal en la carpeta descomprimida y ejecutar:
+python3 CONTROL_PREEMISION.py
+
+Resultado esperado: Ran 8 tests / OK.
+
+IMPORTANTE: El control probado es un prototipo aislado, NO está integrado en el
+flujo de ventas ni constituye autorización para emitir DTE. El TXT DTE 39 y
+la interpretación SOAP siguen pendientes de validación con el proveedor.
+No ejecutar Procesar en producción ni registrar ventas ficticias.
+
+La aplicación se abre con Abrir_en_Mac.command o Abrir_en_Windows.bat.
+Antes de actualizar instalaciones, respaldar ROMERAL_Datos y conservar la
+versión anterior. Este paquete no requiere reemplazar la aplicación instalada
+para ejecutar CONTROL_PREEMISION.py.

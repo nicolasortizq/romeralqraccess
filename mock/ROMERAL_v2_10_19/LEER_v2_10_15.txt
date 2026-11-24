@@ -1,0 +1,10 @@
+ROMERAL v2.10.15 - Cache WSDL y conciliacion local segura.
+
+1. RESPALDAR Documents\ROMERAL_Datos completo y cerrar ROMERAL.
+2. Extraer en carpeta nueva. NO emitir ventas nuevas mientras haya pendiente.
+3. Ejecutar REVISAR_CONCILIACION_SIN_EMITIR_Windows.bat.
+4. Si la venta y control ya constan EMITIDA con el MISMO folio que el XML SOAP local, se puede confirmar para corregir SOLO intentos_soap_dte. El script pide escribir CONFIRMAR.
+5. Si falta XML o hay discrepancias, NO se modifica nada. Enviar foto del diagnostico para revisar.
+6. La cache local de WSDL reduce preparacion de conexiones en llamadas posteriores, sin cachear respuestas tributarias ni reenviar DTE.
+7. Los tiempos reales deben verificarse con romeral_diagnostico_etapas.jsonl. No se garantiza una latencia especifica.
+8. El formato 80mm y la logica de emision permanecen intactos.

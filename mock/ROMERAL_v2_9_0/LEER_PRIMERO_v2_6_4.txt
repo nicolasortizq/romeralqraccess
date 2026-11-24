@@ -1,0 +1,9 @@
+ROMERAL v2.6.4 — corrección de acceso SQLite desde hilos
+
+Se corrigió el acceso a config('impresora_80mm') desde los hilos de impresión y reimpresión: ahora la preferencia de impresora se lee en el hilo principal de Tkinter antes de iniciar el trabajo en segundo plano.
+
+NO se modificaron las credenciales, los archivos SQLite ni el procedimiento de emisión de DTE.
+
+Prueba recomendada: cerrar ROMERAL, respaldar ~/Documents/ROMERAL_Datos, abrir esta versión y pulsar Reimprimir DTE para venta 6. No se emite otra boleta.
+
+Esta versión fue verificada por compilación de Python, pero la descarga y la impresión física aún deben validarse en el Mac del usuario.

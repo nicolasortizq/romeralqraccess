@@ -1,0 +1,9 @@
+ROMERAL v2.10.7 - revision de preemision sin modificaciones a la interfaz ni al flujo de caja.
+
+Se incorpora Auditoria_PreEmision_SOLO_LECTURA.bat para revisar localmente dependencias, credencial presente, configuracion y operaciones pendientes. NO conecta con Facturacion.com, NO llama Procesar, NO modifica base de datos ni habilita emision.
+
+La verificacion anterior ObtenerLink para el folio 26185 fue exitosa en Windows, pero NO prueba permiso para Procesar.
+
+IMPORTANTE: conservar emision_habilitada=false. NO registrar ventas reales hasta verificar controles y aprobar explicitamente una unica emision. No reemplazar la carpeta Documents\ROMERAL_Datos ni las credenciales.
+
+La etiqueta de ventana puede conservar version historica 2.9.7; el nombre del paquete identifica esta revision.

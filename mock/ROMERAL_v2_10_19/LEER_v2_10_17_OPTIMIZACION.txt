@@ -1,0 +1,7 @@
+ROMERAL v2.10.17 - Optimización prudente de recuperación PDF
+
+Cambios: esperas iniciales entre consultas de PDF: 1,1,2 segundos -> 0.5,0.75,1.5 segundos.
+No cambia la emisión SOAP, control de duplicados, folios ni impresión térmica.
+No garantiza 2 segundos de mejora: depende de la disponibilidad del PDF.
+Comparar REPORTE_RENDIMIENTO_Windows.bat antes y después.
+No generar ventas ficticias para probar en producción.

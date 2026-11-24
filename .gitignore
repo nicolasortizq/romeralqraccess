@@ -1,0 +1,37 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+facturacion_*.json
+
+# Local data: never commit real sales, CAF files or databases
+ROMERAL_Datos/
+*.sqlite3
+*.db
+*.jsonl
+
+# Node (Phase 3 admin)
+node_modules/
+
+# Editors
+.vscode/
+.idea/

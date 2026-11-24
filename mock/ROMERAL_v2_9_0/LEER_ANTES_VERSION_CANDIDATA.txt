@@ -1,0 +1,16 @@
+ROMERAL 2.2 - revisión del formato DTE 39 y lector de respuestas SOAP
+
+CAMBIOS:
+- Se corrigió el generador TXT: eliminada etiqueta FormaPagoBoleta, no descrita en manual oficial.
+- Una sola línea de detalle por total, con cantidad de personas en descripción.
+- Precio sin decimales cuando es un monto entero.
+- Nuevo RESPUESTAS_SOAP_DTE.py: interpreta una respuesta XML sin contactar al proveedor.
+
+NO ACTIVADO:
+- Procesar en producción continúa bloqueado.
+- No hay impresión tributaria automática.
+- No hay confirmación de formato por proveedor ni prueba real.
+
+No sustituir la instalación que ya funciona hasta validar el flujo completo.
+Fuentes: https://www.facturacion.cl/manualintegracion/archivoboletaelectronica.php
+https://www.facturacion.cl/manualintegracion/integracionservicioweb.php

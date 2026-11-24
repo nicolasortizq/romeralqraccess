@@ -1,0 +1,11 @@
+ROMERAL v2.6.7 - Representación térmica compacta para Printer_POS_80.
+
+La boleta térmica es una COPIA de presentación del PDF oficial de Facturacion.com, no un DTE nuevo. Se mantiene el archivo oficial original sin cambios. El timbre PDF417 se extrae del PDF original sin reconstruir sus datos; la aplicación exige que el folio, RUT y total coincidan con el registro antes de imprimir.
+
+La hora de ingreso proviene de la fecha/hora guardada al registrar la venta. No es necesariamente la hora de emisión tributaria.
+
+IMPORTANTE: esta versión NO se ha probado físicamente con tu impresora. La primera prueba debe ser Reimprimir DTE -> venta 6, sin emitir otra boleta. Verifica que el timbre sea legible y escaneable. Si no se puede reconocer el timbre, el programa detiene la impresión para evitar un documento incompleto.
+
+Requisitos Mac: python3 -m pip install pymupdf pillow numpy (instalados previamente en tu Mac). Conserva el respaldo de Documentos/ROMERAL_Datos. No borres la base de datos.
+
+La opción 'Imprimir PDF oficial' sin número de venta conserva el modo de adaptación de PDF genérico; para el diseño ROMERAL usa Reimprimir DTE o REGISTRAR VENTA.

@@ -1,0 +1,12 @@
+ROMERAL v2.9.8 - Diagnóstico CAF PLANO (solo lectura)
+
+En Opciones > Credenciales PLANO (pruebas), ingresar con supervisor.
+Presionar CONSULTAR CAF PLANO · SOLO LECTURA y autorizar explícitamente.
+El botón usa las credenciales PLANO ya guardadas en Documentos\ROMERAL_Datos y el llavero.
+Invoca únicamente ConsultarCAF DTE39; no invoca Procesar ni modifica folios, ventas o producción.
+El endpoint WSDL corresponde al wsplano utilizado en versiones anteriores.
+La conexión real no se ha probado en este entorno: verificar resultado en Windows.
+Si el servicio devuelve error o respuesta no interpretable, NO intentar emitir.
+No compartir contraseñas ni respuestas SOAP completas.
+Cerrar ROMERAL, extraer en carpeta nueva, ejecutar Abrir_en_Windows.bat.
+NO borrar Documentos\ROMERAL_Datos.

@@ -1,0 +1,5 @@
+ROMERAL - Revisión de respuesta SOAP
+
+Se admite un documento wsplano dentro de un sobre SOAP si es único. No se interpreta como éxito un sobre SOAP sin confirmación explícita por documento y folio. Se conserva la respuesta cruda antes de conciliar.
+
+NO EJECUTAR EMISION todavía: falta verificar una respuesta auténtica del proveedor. La venta 5 permanece pendiente. No se cambia la base de datos ni las credenciales.

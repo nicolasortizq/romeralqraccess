@@ -1,0 +1,11 @@
+ROMERAL 2.1 - REGISTRO DTE INTEGRADO (SIN EMISIÓN REAL)
+
+NOVEDAD: cada NUEVA venta confirmada se registra atómicamente en control_emision, vinculada a la referencia única de ventas. No modifica el estado ni el folio de las ventas antiguas. No ejecuta Procesar.
+
+ANTES DE USAR: respalda ~/Documents/ROMERAL_Datos con ROMERAL cerrado. Descomprime este paquete en una carpeta nueva, sin borrar tu versión anterior.
+
+PRUEBA SEGURA: python3 PRUEBA_REGISTRO_INTEGRADO.py
+
+IMPORTANTE: ejecutar la aplicación crea una tabla nueva control_emision en la base de datos habitual. No crea ventas de prueba por sí solo. El nuevo control se aplica a ventas registradas DESPUÉS de instalar esta versión; no se hace migración retroactiva.
+
+Esta versión NO habilita emisión DTE 39 ni valida el formato de Facturacion.com. La tabla de control es preparación para una posterior conciliación segura.

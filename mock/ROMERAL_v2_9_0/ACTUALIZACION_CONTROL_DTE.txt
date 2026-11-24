@@ -1,0 +1,12 @@
+ROMERAL v2.3.1 — ajuste de visualización Control DTE
+
+Se corrige el aviso genérico «Conciliar con proveedor» cuando existen registros concordantes de confirmación SOAP, control de emisión y folio.
+
+No consulta al SII: «SOAP confirmado» NO significa aceptación tributaria final.
+No realiza emisión, no asigna folios, no reintenta, no modifica ventas ni cierres.
+El resto de funciones permanece como en v2.3, incluida la descarga MANUAL del PDF oficial.
+
+INSTALACIÓN: cerrar ROMERAL, respaldar ~/Documents/ROMERAL_Datos, descomprimir en carpeta nueva y ejecutar Abrir_en_Mac.command.
+No borrar ni reemplazar ROMERAL_Datos.
+
+La venta 5 con folio 26184 no debe volver a emitirse.

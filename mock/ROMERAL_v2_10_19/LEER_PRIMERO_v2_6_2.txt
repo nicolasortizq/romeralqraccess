@@ -1,0 +1,14 @@
+ROMERAL v2.6.2 — DIAGNÓSTICO DEL MENSAJE SOAP DE OBTENERLINK
+
+Esta versión NO asegura aún impresión automática: mejora el diagnóstico del rechazo.
+
+- No modifica credenciales, ventas, folios, cierres ni base de datos.
+- El método Reimprimir DTE solo consulta la venta emitida; no llama Procesar.
+- Si ObtenerLink devuelve XML con etiqueta mensaje, se guarda su contenido limitado y
+  parcialmente ocultado en romeral_diagnostico_pdf_venta_6.json.
+- IMPORTANTE: revisa el JSON antes de compartirlo por si el proveedor incluye datos privados.
+- No se almacenan contraseñas en el ZIP.
+
+Cerrar ROMERAL, respaldar ROMERAL_Datos, abrir Abrir_en_Mac.command, y consultar
+Reimprimir DTE con venta 6 una sola vez. Si falla, adjuntar el JSON actualizado.
+No registrar ventas nuevas para esta comprobación.
