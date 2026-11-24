@@ -184,12 +184,33 @@ paths:
       tags: [woocommerce]
       operationId: receiveWooCommerceWebhook
       summary: Recibir un pedido pagado desde WooCommerce
-      description: >
-        WooCommerce llama a este endpoint cuando un pedido pasa a estado
-        "Procesando" o "Completado". El backend valida la firma del
-        encabezado `X-WC-Webhook-Signature` en vez de la clave de
-        terminal, crea la entrada y envía el correo con el QR al
-        comprador.
+      description: |
+        WooCommerce llama a este endpoint en cada creación o actualización
+        de pedido. No hay un evento distinto para la anulación: el backend
+        decide qué hacer según el campo `status` del pedido. En todos los
+        casos valida primero la firma del encabezado
+        `X-WC-Webhook-Signature` en vez de la clave de terminal.
+
+        - `processing` o `completed` (pedido pagado): crea la entrada, una
+          línea por cada `line_items`, y envía el correo con el QR al
+          comprador. Es idempotente por `id` de pedido: una segunda entrega
+          del mismo pedido devuelve la entrada existente y no crea nada.
+        - `cancelled` o `refunded`: busca la entrada de ese pedido y
+          cambia su estado. Si estaba en `VALID` pasa a `CANCELLED` (ya no
+          se puede canjear). Si ya estaba en `REDEEMED` pasa a
+          `REFUNDED_AFTER_REDEMPTION`, un estado aparte porque hay una
+          boleta DTE 39 real ya emitida y asociada; la Fase 1 solo lo deja
+          visible y distinguible, no lo resuelve contablemente (ver
+          docs/plans/2026-11-23-fase1-entradas-online-qr-design.md). Si ya
+          estaba en `CANCELLED` o `REFUNDED_AFTER_REDEMPTION`, no hace
+          nada: la entrega es un duplicado. Si el pedido no tiene entrada,
+          tampoco hace nada.
+        - Cualquier otro estado (`pending`, `on-hold`, `failed`, `draft`,
+          ...): no es un pedido pagado ni una anulación, no se hace nada.
+
+        Siempre responde 200 con `{"received": true}` cuando la firma es
+        válida, sea cual sea la rama tomada, para que WooCommerce no
+        reintente indefinidamente.
       security:
         - webhookSignature: []
       requestBody:
@@ -200,7 +221,10 @@ paths:
               $ref: '#/components/schemas/WooCommerceOrderPaidPayload'
       responses:
         '200':
-          description: Pedido aceptado y entrada creada (o ya existente para ese pedido).
+          description: >
+            Pedido procesado: entrada creada, ya existente, anulada,
+            marcada como reembolsada tras canje, o ignorada según el
+            estado del pedido.
           content:
             application/json:
               schema:
@@ -459,6 +483,14 @@ components:
         quantity:
           type: integer
           example: 3
+        price:
+          type: string
+          description: >
+            Precio unitario de la línea en CLP, como lo entrega
+            WooCommerce. Se guarda en `online_ticket_line.unit_price`. Si
+            falta, el backend lo registra como 0: el monto que manda es
+            siempre `total` del pedido, nunca este campo.
+          example: "12000"
         total:
           type: string
           description: Subtotal de la línea en CLP, como lo entrega WooCommerce.
@@ -488,8 +520,12 @@ components:
           example: "10452"
         status:
           type: string
-          description: Estado del pedido.
-          enum: [processing, completed]
+          description: >
+            Estado del pedido. `processing` y `completed` son los estados
+            pagados que crean la entrada; `cancelled` y `refunded` la
+            anulan o la marcan como reembolsada tras canje. Cualquier otro
+            estado que WooCommerce envíe se ignora.
+          enum: [processing, completed, cancelled, refunded]
           example: processing
         billing:
           type: object
