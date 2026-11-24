@@ -747,11 +747,18 @@ class Romeral(tk.Tk):
   Webpay en la web) y origen 'ONLINE' para que el cierre de caja (Task 20)
   la muestre en su propia línea sin sumarla al efectivo esperado. El resto
   del flujo (control de emisión, evento de auditoría) replica `registrar()`.
+
+  tipo siempre 'Entrada General': es el único producto que entra al sistema
+  (docs/PROYECTO.md 4.1); la columna `origen` ya distingue online de
+  presencial para todo lo demás. `VentaBoleta.validar()` en
+  integracion_facturacion.py solo acepta un conjunto fijo de modalidades y
+  rechazaría cualquier otro valor, lo que haría fallar la emisión de la
+  boleta en cada canje online (ver tests/test_registrar_venta_online.py).
   """
   with conn:
    cursor=conn.execute(
     "INSERT INTO ventas(fecha,cantidad,precio,total,medio,tipo,estado_boleta,referencia_venta,tipo_dte,origen) VALUES (?,?,?,?,?,?,?,?,?,?)",
-    (datetime.now().isoformat(timespec='seconds'),cantidad,total//max(cantidad,1),total,'Webpay','Entrada Online','PENDIENTE_INTEGRACION',str(uuid.uuid4()),39,'ONLINE'))
+    (datetime.now().isoformat(timespec='seconds'),cantidad,total//max(cantidad,1),total,'Webpay','Entrada General','PENDIENTE_INTEGRACION',str(uuid.uuid4()),39,'ONLINE'))
    referencia=conn.execute('SELECT referencia_venta FROM ventas WHERE id=?',(cursor.lastrowid,)).fetchone()[0]
    registrar_control_emision(conn,cursor.lastrowid,referencia)
    conn.execute('INSERT INTO eventos_dte(venta_id,fecha,evento,detalle) VALUES (?,?,?,?)',
@@ -1127,7 +1134,7 @@ class Romeral(tk.Tk):
     banner_label.configure(bg='#FBE0E0',fg='#B42332')
     puede=False
    lineas='\n'.join(
-    f"  · {l.get('product_name','')} x{l.get('quantity','?')} · {pesos(l.get('line_total',0))}"
+    f"  · {l.get('product_name','')} x{l.get('quantity','?')} · {pesos(l.get('unit_price',0))} c/u · {pesos(l.get('line_total',0))}"
     for l in ticket.get('lines',[]))
    tarjeta_var.set(
     f"Comprador: {ticket.get('buyer_name','')}\n"
