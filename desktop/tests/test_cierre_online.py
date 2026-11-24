@@ -17,7 +17,7 @@ import sqlite3
 
 import pytest
 
-from cierre_caja import calcular_resumen_cierre
+from cierre_caja import calcular_resumen_cierre, rows_changed
 
 FECHA = '2026-11-23'
 
@@ -53,7 +53,9 @@ def db_with_online_and_cash_sales():
 def test_cierre_includes_online_line_with_people_and_invoice_count(db_with_online_and_cash_sales):
     resumen = calcular_resumen_cierre(db_with_online_and_cash_sales, fecha=FECHA)
     assert resumen['online']['personas'] == 2
-    assert resumen['online']['boletas'] == 1
+    # 'ventas' counts online redemption rows, not confirmed-issued boletas
+    # (emission is async; estado_boleta may still be PENDIENTE_INTEGRACION).
+    assert resumen['online']['ventas'] == 1
     assert resumen['online']['total'] == 24000
 
 
@@ -79,6 +81,61 @@ def test_grand_totals_include_online_as_real_revenue(db_with_online_and_cash_sal
     assert resumen['ventas'] == 3
     assert resumen['personas'] == 6
     assert resumen['total'] == 75000
+
+
+def test_tipos_includes_online_as_its_own_row_and_reconciles_with_header_totals(db_with_online_and_cash_sales):
+    """The dict meant for desglose_json/printed cierre ('tipos') must sum to
+    the same total/personas/ventas as the header, or the printed/archived
+    cash-close document shows a modality table that doesn't reconcile with
+    its own recaudacion total (the Critical defect this test guards against).
+    """
+    resumen = calcular_resumen_cierre(db_with_online_and_cash_sales, fecha=FECHA)
+    assert 'Online' in resumen['tipos']
+    assert resumen['tipos']['Online'] == resumen['online']
+    # presencial stays online-free (for the on-screen panel's separate line).
+    assert 'Online' not in resumen['presencial']
+    assert sum(v['personas'] for v in resumen['tipos'].values()) == resumen['personas']
+    assert sum(v['total'] for v in resumen['tipos'].values()) == resumen['total']
+    assert sum(v['ventas'] for v in resumen['tipos'].values()) == resumen['ventas']
+
+
+def test_tipos_omits_online_row_when_no_online_sales():
+    conn = sqlite3.connect(':memory:')
+    conn.execute('''CREATE TABLE ventas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, fecha TEXT NOT NULL,
+        cantidad INTEGER NOT NULL, precio INTEGER NOT NULL,
+        total INTEGER NOT NULL, medio TEXT NOT NULL,
+        tipo TEXT NOT NULL DEFAULT 'Entrada General',
+        estado_boleta TEXT NOT NULL DEFAULT 'PENDIENTE_INTEGRACION',
+        folio_dte TEXT,
+        origen TEXT NOT NULL DEFAULT 'PRESENCIAL'
+    )''')
+    conn.execute(
+        "INSERT INTO ventas(fecha,cantidad,precio,total,medio,tipo,estado_boleta,folio_dte,origen) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (f'{FECHA} 10:00:00', 1, 1000, 1000, 'Efectivo', 'Entrada General', 'EMITIDA', '1', 'PRESENCIAL'),
+    )
+    conn.commit()
+    resumen = calcular_resumen_cierre(conn, fecha=FECHA)
+    assert 'Online' not in resumen['tipos']
+    conn.close()
+
+
+def test_rows_changed_false_for_identical_row_lists():
+    rows = [(1, FECHA, 'Entrada General', 'Efectivo', 2, 24000, 'EMITIDA', '1', 'PRESENCIAL')]
+    assert rows_changed(rows, list(rows)) is False
+
+
+def test_rows_changed_true_when_a_row_is_appended():
+    before = [(1, FECHA, 'Entrada General', 'Efectivo', 2, 24000, 'EMITIDA', '1', 'PRESENCIAL')]
+    after = before + [(2, FECHA, 'Entrada General', 'Webpay', 1, 12000, 'EMITIDA', '2', 'ONLINE')]
+    assert rows_changed(before, after) is True
+
+
+def test_rows_changed_true_when_an_existing_row_field_changes():
+    before = [(1, FECHA, 'Entrada General', 'Efectivo', 2, 24000, 'EMITIDA', '1', 'PRESENCIAL')]
+    after = [(1, FECHA, 'Entrada General', 'Efectivo', 2, 24000, 'ANULADA_PRUEBA', '1', 'PRESENCIAL')]
+    assert rows_changed(before, after) is True
 
 
 def test_ignores_other_dates_and_cancelled_test_sales(db_with_online_and_cash_sales):

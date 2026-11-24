@@ -21,14 +21,13 @@ def _datos(conn, fecha, preliminar):
         _,creado,esperado,contado,diferencia,webpay,tarjeta,total,personas,ventas,detalle = cerrado
         tipos=json.loads(detalle)
         return creado, esperado, contado, diferencia, webpay, tarjeta, total, personas, ventas, tipos, True
-    rows=conn.execute("SELECT tipo,medio,cantidad,total FROM ventas WHERE substr(fecha,1,10)=? AND estado_boleta != 'ANULADA_PRUEBA'",(fecha,)).fetchall()
-    medios={m:sum(int(r[3]) for r in rows if r[1]==m) for m in ('Efectivo','Webpay','Tarjeta')}
-    tipos={}
-    for tipo,medio,cantidad,monto in rows:
-        tipo='Cabañas' if tipo=='Alojamiento' else tipo
-        x=tipos.setdefault(tipo,{'personas':0,'ventas':0,'total':0})
-        x['personas']+=int(cantidad);x['ventas']+=1;x['total']+=int(monto)
-    return datetime.now().isoformat(timespec='seconds'),medios['Efectivo'],None,None,medios['Webpay'],medios['Tarjeta'],sum(r[3] for r in rows),sum(r[2] for r in rows),len(rows),tipos,False
+    # Preliminar (sin cierre guardado aun): misma agregacion que panel_cierre(),
+    # para que esta vista previa no desacuerde con el panel en pantalla sobre
+    # si una venta online cuenta como 'Entrada General' presencial o no.
+    from cierre_caja import calcular_resumen_cierre
+    r=calcular_resumen_cierre(conn,fecha)
+    return (datetime.now().isoformat(timespec='seconds'),r['medios']['Efectivo'],None,None,
+            r['medios']['Webpay'],r['medios']['Tarjeta'],r['total'],r['personas'],r['ventas'],r['tipos'],False)
 
 
 def crear_pdf_cierre(conn, fecha, carpeta, preliminar=False):
