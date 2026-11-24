@@ -15,8 +15,8 @@ import sys
 import types
 
 _FAKE_CONFIG = {
-    'ACCESO_API_URL': 'https://acceso.vallederomeral.cl',
-    'ACCESO_TERMINAL_KEY': 'test-terminal-key',
+    'acceso_api_url': 'https://acceso.vallederomeral.cl',
+    'acceso_terminal_key': 'test-terminal-key',
 }
 
 _fake_romeral = types.ModuleType('romeral')

@@ -4,11 +4,11 @@ This module is deliberately separate from `romeral.py`: `desktop/tests/conftest.
 registers a lightweight stand-in for the `romeral` module in `sys.modules` before
 any test imports anything, precisely so importing test subjects never triggers
 the real `romeral.py` module-level side effects (tkinter, opening the real
-gate SQLite database). `ventas_online.py` already follows this convention
-(it does `import romeral` at module level, but only calls `romeral.config()`
-inside functions); `CanjeOnlineController` follows the same shape so it can
-be unit-tested with a plain mock `app`, without ever constructing a real
-`Romeral` Tkinter window.
+gate SQLite database). `ventas_online.py` goes further and imports `romeral`
+lazily, inside the functions that call `romeral.config()`, because a
+module-level import there breaks the real startup path (see its docstring);
+`CanjeOnlineController` keeps the same shape so it can be unit-tested with a
+plain mock `app`, without ever constructing a real `Romeral` Tkinter window.
 
 `CanjeOnlineController` itself holds no state: it orchestrates calls between
 the backend HTTP client (`ventas_online`) and the Tkinter app instance

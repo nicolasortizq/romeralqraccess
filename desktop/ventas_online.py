@@ -7,12 +7,18 @@ to so the gate can look up, search, redeem and report the invoice of a
 ticket. This module makes no local copy and keeps no SQLite state of its
 own; the only thing it owns is turning this app's config into HTTP calls.
 
-Configuration (`ACCESO_API_URL`, `ACCESO_TERMINAL_KEY`) comes from the same
+Configuration (`acceso_api_url`, `acceso_terminal_key`) comes from the same
 mechanism the rest of the app already uses, `romeral.config()`, rather than
-a second settings system.
+a second settings system. See `docs/api/README.md` for the full list of gate
+configuration keys.
+
+`romeral` is imported lazily inside the functions that need it, never at
+module level: `romeral.py` runs as `__main__` and imports this module, so a
+module-level `import romeral` re-executes `romeral.py` as a second module
+and deadlocks the import cycle (romeral -> ventas_online -> romeral ->
+canje_online -> ventas_online, which is still half-initialised).
 """
 import requests
-import romeral
 
 TIMEOUT_SECONDS = 10
 
@@ -25,17 +31,24 @@ class TicketAlreadyRedeemedError(Exception):
     """
 
 
+def _config(key):
+    # Deferred import: see the module docstring. romeral.py runs as __main__
+    # and imports this module, so importing it at module level re-executes it.
+    import romeral
+    return romeral.config(key)
+
+
 def _base_url():
-    url = romeral.config('ACCESO_API_URL')
+    url = _config('acceso_api_url')
     if not url:
-        raise RuntimeError('Falta configurar ACCESO_API_URL.')
+        raise RuntimeError('Falta configurar acceso_api_url.')
     return url.rstrip('/')
 
 
 def _headers():
-    terminal_key = romeral.config('ACCESO_TERMINAL_KEY')
+    terminal_key = _config('acceso_terminal_key')
     if not terminal_key:
-        raise RuntimeError('Falta configurar ACCESO_TERMINAL_KEY.')
+        raise RuntimeError('Falta configurar acceso_terminal_key.')
     return {'X-Terminal-Key': terminal_key}
 
 
