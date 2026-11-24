@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mock · Pantalla de canje online</title>
+<style>
+  /*
+    MOCK ESTÁTICO — canje_online.html
+    Referencia visual de la pantalla táctil de canje de entradas online
+    de la app de escritorio (Tkinter). Paleta y convenciones tomadas de
+    mock/ROMERAL_v2_10_19/romeral.py (panel_qr_online, boton_color):
+    NAVY #102F52, INK #17385C, BG #EDF3F8, WHITE #FFFFFF, verde éxito
+    #19705B, advertencia #FFF0CF/#744300, error #B42332, deshabilitado
+    #AAB3BE. Pensada para leerse a 1024x768 táctil: botones grandes,
+    tipografía grande, pocos elementos por pantalla.
+  */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background-color: #D7E3F0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #17385C;
+  }
+  .nota-mock {
+    max-width: 1024px;
+    margin: 0 auto 18px auto;
+    background-color: #FFF0CF;
+    color: #744300;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 10px 16px;
+    border-radius: 6px;
+  }
+
+  /* ---- Marco de la ventana: 1024x768 ---- */
+  .ventana {
+    width: 1024px;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: #EDF3F8;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  }
+  .barra-titulo {
+    background-color: #102F52;
+    color: #FFFFFF;
+    padding: 18px 28px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .barra-titulo .marca { font-size: 21px; font-weight: bold; }
+  .barra-titulo .sub { font-size: 12px; color: #BED1E4; font-weight: bold; }
+
+  .cuerpo {
+    padding: 22px 28px 28px 28px;
+    min-height: 640px;
+  }
+
+  /* ---- Entrada / escaneo ---- */
+  .panel-entrada {
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+  }
+  .panel-entrada label {
+    display: block;
+    font-size: 14px;
+    font-weight: bold;
+    color: #102F52;
+    margin-bottom: 10px;
+  }
+  .fila-entrada {
+    display: flex;
+    gap: 14px;
+  }
+  .campo-codigo {
+    flex: 1;
+    font-size: 20px;
+    padding: 14px 16px;
+    border: 2px solid #CBD9EA;
+    border-radius: 6px;
+    color: #17385C;
+    background-color: #FFFFFF;
+  }
+  .boton-escanear {
+    background-color: #19705B;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    padding: 0 28px;
+    min-width: 220px;
+    min-height: 56px;
+    cursor: pointer;
+  }
+
+  /* ---- Banner de estado ---- */
+  .banner {
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin-bottom: 18px;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .banner .detalle { font-size: 13px; font-weight: normal; margin-top: 4px; }
+  .banner-valido { background-color: #DDF0E6; color: #19705B; }
+  .banner-canjeado { background-color: #FFF0CF; color: #744300; }
+  .banner-cancelado { background-color: #FBE0E0; color: #B42332; }
+  .banner-fuera-temporada { background-color: #E8E8EC; color: #41536B; }
+
+  /* ---- Tarjeta de resultado ---- */
+  .tarjeta {
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+  }
+  .tarjeta-fila {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 14px;
+  }
+  .campo-dato .etiqueta {
+    font-size: 11px;
+    color: #66778B;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .campo-dato .valor {
+    font-size: 18px;
+    color: #17385C;
+    font-weight: bold;
+    margin-top: 2px;
+  }
+
+  table.lineas {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+  }
+  table.lineas th {
+    text-align: left;
+    font-size: 11px;
+    color: #66778B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 8px 10px;
+    border-bottom: 2px solid #DCE7F3;
+  }
+  table.lineas td {
+    font-size: 15px;
+    color: #17385C;
+    padding: 10px 10px;
+    border-bottom: 1px solid #ECF1F7;
+  }
+  table.lineas td.num { text-align: right; }
+
+  .total-pagado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #E8F2FF;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-top: 14px;
+  }
+  .total-pagado .etiqueta { font-size: 15px; font-weight: bold; color: #102F52; }
+  .total-pagado .valor { font-size: 26px; font-weight: bold; color: #06499A; }
+
+  /* ---- Botón principal de canje ---- */
+  .boton-canjear {
+    width: 100%;
+    min-height: 72px;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    color: #FFFFFF;
+    cursor: pointer;
+  }
+  .boton-canjear.habilitado { background-color: #19705B; }
+  .boton-canjear.deshabilitado {
+    background-color: #AAB3BE;
+    color: #E7EAEE;
+    cursor: not-allowed;
+  }
+  .ayuda-boton {
+    text-align: center;
+    font-size: 12px;
+    color: #66778B;
+    margin-top: 8px;
+  }
+
+  /* ---- Sección de referencia de otros estados ---- */
+  .referencia {
+    max-width: 1024px;
+    margin: 28px auto 0 auto;
+  }
+  .referencia h2 {
+    font-size: 15px;
+    color: #17385C;
+    margin: 0 0 10px 4px;
+  }
+  .grid-referencia {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .caso {
+    background-color: #FFFFFF;
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .caso .titulo-caso {
+    font-size: 12px;
+    font-weight: bold;
+    color: #66778B;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="nota-mock">
+  MOCK ESTÁTICO · referencia visual para Task 19 (pantalla de canje de la app de escritorio). No es código funcional.
+</div>
+
+<!-- ===================== Pantalla principal: estado VALID ===================== -->
+<div class="ventana">
+
+  <div class="barra-titulo">
+    <span class="marca">ROMERAL</span>
+    <span class="sub">CANJE DE ENTRADA ONLINE · QR</span>
+  </div>
+
+  <div class="cuerpo">
+
+    <!-- Escaneo / ingreso manual -->
+    <div class="panel-entrada">
+      <label for="campo-codigo">Escanea el código QR o ingrésalo manualmente</label>
+      <div class="fila-entrada">
+        <input id="campo-codigo" class="campo-codigo" type="text"
+               value="VR1K7M2Q9XW4TB8N3HD6PA5RC" readonly>
+        <button class="boton-escanear" type="button">BUSCAR ENTRADA</button>
+      </div>
+    </div>
+
+    <!-- Banner de estado: válida -->
+    <div class="banner banner-valido">
+      <div>
+        ENTRADA VÁLIDA
+        <div class="detalle">Lista para canjear. Verifica los datos antes de confirmar.</div>
+      </div>
+      <div>VALID</div>
+    </div>
+
+    <!-- Tarjeta de resultado -->
+    <div class="tarjeta">
+      <div class="tarjeta-fila">
+        <div class="campo-dato">
+          <div class="etiqueta">Comprador</div>
+          <div class="valor">María Pérez</div>
+        </div>
+        <div class="campo-dato">
+          <div class="etiqueta">Pedido</div>
+          <div class="valor">#10452</div>
+        </div>
+        <div class="campo-dato">
+          <div class="etiqueta">Personas</div>
+          <div class="valor">3 personas</div>
+        </div>
+      </div>
+
+      <table class="lineas">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th class="num">Cantidad</th>
+            <th class="num">Precio unitario</th>
+            <th class="num">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Entrada General</td>
+            <td class="num">2</td>
+            <td class="num">$12.000</td>
+            <td class="num">$24.000</td>
+          </tr>
+          <tr>
+            <td>Entrada Niño</td>
+            <td class="num">1</td>
+            <td class="num">$12.000</td>
+            <td class="num">$12.000</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="total-pagado">
+        <span class="etiqueta">Total pagado · Webpay</span>
+        <span class="valor">$36.000</span>
+      </div>
+    </div>
+
+    <!-- Acción principal -->
+    <button class="boton-canjear habilitado" type="button">CANJEAR Y EMITIR BOLETA</button>
+    <div class="ayuda-boton">Al confirmar se marca la entrada como canjeada y se emite la boleta en Facturacion.cl por el total pagado.</div>
+
+  </div>
+</div>
+
+<!-- ===================== Referencia: otros estados posibles ===================== -->
+<div class="referencia">
+  <h2>Otros estados posibles (referencia, no forman parte de la pantalla principal)</h2>
+  <div class="grid-referencia">
+
+    <div class="caso">
+      <div class="titulo-caso">Ya canjeada</div>
+      <div class="banner banner-canjeado" style="margin-bottom:10px;">
+        <div>
+          YA CANJEADA
+          <div class="detalle">23-11-2026 11:42 · Terminal acceso-1 · jperez</div>
+        </div>
+        <div>REDEEMED</div>
+      </div>
+      <button class="boton-canjear deshabilitado" type="button" disabled>CANJEAR Y EMITIR BOLETA</button>
+    </div>
+
+    <div class="caso">
+      <div class="titulo-caso">Anulada</div>
+      <div class="banner banner-cancelado" style="margin-bottom:10px;">
+        <div>
+          ENTRADA ANULADA
+          <div class="detalle">El pedido fue reembolsado o cancelado en WooCommerce.</div>
+        </div>
+        <div>CANCELLED</div>
+      </div>
+      <button class="boton-canjear deshabilitado" type="button" disabled>CANJEAR Y EMITIR BOLETA</button>
+    </div>
+
+    <div class="caso">
+      <div class="titulo-caso">Fuera de temporada</div>
+      <div class="banner banner-fuera-temporada" style="margin-bottom:10px;">
+        <div>
+          FUERA DE TEMPORADA
+          <div class="detalle">Venció el 28-02-2027. No se puede canjear.</div>
+        </div>
+        <div>VALID · vencida</div>
+      </div>
+      <button class="boton-canjear deshabilitado" type="button" disabled>CANJEAR Y EMITIR BOLETA</button>
+    </div>
+
+    <div class="caso">
+      <div class="titulo-caso">Reembolsada tras canje</div>
+      <div class="banner banner-cancelado" style="margin-bottom:10px;">
+        <div>
+          REEMBOLSADA DESPUÉS DE CANJEADA
+          <div class="detalle">Canjeada el 15-01-2027 · reembolso posterior registrado.</div>
+        </div>
+        <div>REFUNDED_AFTER_REDEMPTION</div>
+      </div>
+      <button class="boton-canjear deshabilitado" type="button" disabled>CANJEAR Y EMITIR BOLETA</button>
+    </div>
+
+    <div class="caso">
+      <div class="titulo-caso">Código no encontrado</div>
+      <div class="banner banner-cancelado" style="margin-bottom:10px;">
+        <div>
+          CÓDIGO NO ENCONTRADO
+          <div class="detalle">No existe ninguna entrada con ese código. Revisa el escaneo.</div>
+        </div>
+        <div>404</div>
+      </div>
+      <button class="boton-canjear deshabilitado" type="button" disabled>CANJEAR Y EMITIR BOLETA</button>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
