@@ -3,9 +3,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.utils import timezone
 
 from tickets.models import OnlineTicket
+from tickets.webhooks import create_ticket_from_order
 from tickets.tests.conftest import make_online_ticket, make_season
 
 _order_id_counter = itertools.count(9900)
@@ -110,3 +112,33 @@ def test_reconcile_queries_with_a_lookback_window_in_the_past(mock_woocommerce_c
     mock_woocommerce_client.list_paid_orders.assert_called_once()
     (since,), _ = mock_woocommerce_client.list_paid_orders.call_args
     assert since < timezone.now()
+
+
+@pytest.mark.django_db
+def test_one_bad_order_does_not_abort_the_rest_of_the_batch(mock_woocommerce_client):
+    """This runs unattended from cron: a single unprocessable order must
+    not cost every order behind it in the same window."""
+    make_season()
+    bad_id = next(_order_id_counter)
+    good_id = next(_order_id_counter)
+    mock_woocommerce_client.list_paid_orders.return_value = [
+        sample_order_dict(order_id=bad_id),
+        sample_order_dict(order_id=good_id),
+    ]
+
+    real_create = create_ticket_from_order
+
+    def create_or_explode(order, *args, **kwargs):
+        if order["id"] == bad_id:
+            raise RuntimeError("pedido imposible de procesar")
+        return real_create(order, *args, **kwargs)
+
+    with patch(
+        "tickets.management.commands.reconcile_orders.create_ticket_from_order",
+        side_effect=create_or_explode,
+    ):
+        with pytest.raises(CommandError):
+            call_command("reconcile_orders")
+
+    assert not OnlineTicket.objects.filter(woo_order_id=bad_id).exists()
+    assert OnlineTicket.objects.filter(woo_order_id=good_id).exists()
