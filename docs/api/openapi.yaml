@@ -130,8 +130,10 @@ paths:
         '409':
           description: >
             La entrada ya no se puede canjear: ya estaba canjeada
-            (`REDEEMED`), anulada (`CANCELLED`) o fue reembolsada después
-            de canjeada (`REFUNDED_AFTER_REDEMPTION`).
+            (`REDEEMED`), anulada (`CANCELLED`), fue reembolsada después
+            de canjeada (`REFUNDED_AFTER_REDEMPTION`), o está fuera de
+            temporada (`valid_until` ya pasó, aunque su `status` siga
+            siendo `VALID`).
           content:
             application/json:
               schema:
@@ -399,9 +401,11 @@ components:
         redeemed_by:
           type: ["string", "null"]
           description: >
-            Identifica el canje como "terminal:usuario". Nulo si la
-            entrada no se ha canjeado.
-          example: "acceso-1:jperez"
+            Usuario (cajero o supervisor) que realizó el canje, tal como
+            se envió en RedeemRequest.redeemed_by. Nulo si la entrada no
+            se ha canjeado. La terminal que realizó el canje queda
+            registrada en la bitácora de eventos, no en este campo.
+          example: "jperez"
         invoice_status:
           type: string
           description: Estado de la boleta asociada al canje.
