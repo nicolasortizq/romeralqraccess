@@ -1,0 +1,12 @@
+ROMERAL v2.7.1 — DIAGNÓSTICO DE TIEMPOS
+
+Mantiene la emisión SOAP única, recuperación con reintentos, reimpresión por folio y formato térmico 80 mm.
+
+Registra tiempos de: proceso de emisión, recuperación del PDF, generación térmica y envío a CUPS.
+
+Archivo generado: ~/Documents/ROMERAL_Datos/romeral_diagnostico_etapas.jsonl
+
+ATENCIÓN: CUPS confirma recepción del trabajo, no la salida física del papel. Para medir la impresión física, cronometra manualmente desde REGISTRAR VENTA hasta que termine de salir la boleta.
+
+No borres ni reemplaces ~/Documents/ROMERAL_Datos. Respalda antes de instalar.
+No hagas ventas ficticias: usa la próxima venta real. Si hay error, no vuelvas a registrar la misma venta.

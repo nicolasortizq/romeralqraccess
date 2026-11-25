@@ -1,0 +1,13 @@
+ROMERAL 1.18 — Historial de cierres
+
+Instalación: cerrar ROMERAL, respaldar ~/Documents/ROMERAL_Datos,
+descomprimir ZIP en carpeta NUEVA y ejecutar el iniciador Mac/Windows.
+
+Nuevo botón: Historial cierres (requiere clave de supervisor).
+Permite listar cierres guardados y recuperar un reporte histórico por fecha.
+No modifica cierres, ventas ni datos tributarios. No llama a Procesar.
+Los cierres siguen siendo opcionales, únicos por fecha y no editables.
+Los reportes HTML se generan en ~/Documents/ROMERAL_Datos/cierres.
+
+Prueba: comprobar que aparezca el cierre de $0 del 16/11/2026
+y abrir el reporte desde el historial.

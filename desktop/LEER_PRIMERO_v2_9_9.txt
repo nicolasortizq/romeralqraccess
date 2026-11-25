@@ -1,0 +1,8 @@
+ROMERAL v2.9.9 - PRUEBA MANUAL AISLADA DTE39 PLANO
+
+No se alteran ventas, producción ni el programa de caja.
+Ejecutar Abrir_Prueba_DTE39_PLANO_Windows.bat para ver el TXT antes de enviar.
+Solo si lo autoriza explícitamente, realiza UN intento de Procesar con RUT 1-9.
+No reintentar ante error o timeout. Resultado requiere revisión en portal.
+El registro de intento se conserva en Documentos\ROMERAL_Datos.
+No borrar ni modificar archivos de esa carpeta.

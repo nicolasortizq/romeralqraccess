@@ -1,0 +1,4 @@
+# Test-only dependencies for desktop/. Runtime dependencies (including
+# requests, already used in production) stay in requirements_windows.txt.
+pytest>=8.3,<9
+requests-mock>=1.12,<2

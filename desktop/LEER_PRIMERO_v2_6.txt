@@ -1,0 +1,33 @@
+ROMERAL v2.6 — CANDIDATA DE IMPRESIÓN AUTOMÁTICA (NO VALIDADA EN EQUIPO REAL)
+
+NOVEDAD
+Al confirmarse la emisión SOAP DTE39, el sistema intenta obtener el PDF oficial
+mediante el enlace IncluyeLink de la respuesta original o el método SOAP ObtenerLink
+(documentado por Facturacion.com). Luego lo envía a la cola de impresión mediante lp.
+
+IMPORTANTE
+- NO se han emitido nuevas boletas para probar esta versión.
+- No se ha validado la respuesta real de ObtenerLink para esta cuenta ni la impresora física.
+- Si la recuperación/impresión falla, la boleta SIGUE EMITIDA y NO se debe registrar
+  otra venta para reemplazarla.
+- El botón Reimprimir DTE permite recuperar e imprimir una venta ya emitida sin
+  generar otro documento. Se recomienda probar PRIMERO con venta 5 o 6.
+- La cola lp puede aceptar el trabajo aunque el papel no salga: verificar físicamente.
+- El PDF se envía sin alteraciones. La hora de ingreso se conserva en el historial;
+  el PDF oficial solo mostrará la hora si Facturacion.com la incluye originalmente.
+- Los PDF oficiales quedan en ~/Documents/ROMERAL_Datos/boletas_oficiales/.
+- La configuración de impresora sigue siendo la de ROMERAL; confirmar POS-80
+  como impresora predeterminada en macOS si no hay nombre configurado.
+- Respalda ~/Documents/ROMERAL_Datos antes de instalar. NO borrar esa carpeta.
+- No se guardan credenciales en el ZIP.
+
+INSTALACIÓN
+Cerrar ROMERAL, respaldar datos, descomprimir y abrir Abrir_en_Mac.command.
+Primero usar Reimprimir DTE con venta 5 o 6, sin registrar nuevas ventas.
+
+ACTUALIZACIÓN v2.6.1 — DIAGNÓSTICO DE PDF
+- Se reconocen enlaces HTTPS devueltos como texto, base64, XML o XML escapado.
+- Si ObtenerLink no entrega URL, se crea romeral_diagnostico_pdf_venta_N.json
+  en ~/Documents/ROMERAL_Datos. Contiene solo metadatos estructurales; no contraseñas ni URL.
+- Reimprimir DTE no llama a Procesar ni emite una nueva boleta.
+- No se ha comprobado aún la descarga ni impresión automática en la cuenta real.

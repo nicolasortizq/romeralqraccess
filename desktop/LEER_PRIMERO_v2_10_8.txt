@@ -1,0 +1,11 @@
+ROMERAL v2.10.8 - control preventivo de caja (Windows)
+
+CAMBIO: Registrar venta comprueba que el ambiente sea produccion y que emision_habilitada sea el booleano true ANTES de escribir una venta. Si la emisión está bloqueada, no guarda la venta ni intenta emitir.
+CAMBIO: Opciones > Emitir DTE comprueba el mismo interruptor antes de mostrar ventas elegibles.
+Se conserva la comprobación dentro de EMISION_REAL_CONTROLADA.py como última barrera.
+
+IMPORTANTE: NO se ha demostrado autorización productiva para la operación Procesar. ObtenerLink únicamente demostró permiso de consulta. Esta entrega NO activa producción, NO prueba la emisión real, NO certifica protección concurrente entre procesos y NO constituye autorización para operar con público.
+
+Mantener emision_habilitada=false. No reemplazar Documents\ROMERAL_Datos.
+Hacer copia de seguridad de los datos antes de cualquier instalación.
+La etiqueta histórica v2.9.7 puede permanecer en el título de la aplicación.

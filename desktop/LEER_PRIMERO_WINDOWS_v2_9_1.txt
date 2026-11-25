@@ -1,0 +1,34 @@
+ROMERAL v2.9.1 - CANDIDATA DE PRUEBAS EN WINDOWS (NO CERTIFICADA EN HARDWARE)
+
+1. NO borres ni reemplaces la carpeta ROMERAL_Datos. Haz respaldo de la base original.
+2. Extrae este ZIP en una carpeta nueva, fuera de ROMERAL_Datos.
+3. Instala Python 3.11/3.12 para Windows y el controlador de tu impresora POS-80.
+4. Ejecuta INSTALAR_WINDOWS.bat (crea .venv e instala las dependencias).
+5. Instala SumatraPDF para Windows (visor PDF con impresión por línea de comandos).
+6. Ejecuta CONFIGURAR_IMPRESORA_WINDOWS.bat. Selecciona la impresora térmica correcta.
+7. Abre Abrir_en_Windows.bat. No requiere usar Python manualmente después de instalar.
+8. Prueba un resumen PROVISORIO de un día sin ventas para verificar papel de 80 mm.
+9. Comprueba cierres, registro QR, acceso al supervisor, conexión y folios sin emitir DTE de prueba.
+10. La impresión automática de boletas y cierres utiliza SumatraPDF y el spooler de Windows.
+    La aceptación de un trabajo NO demuestra impresión física; comprueba papel, timbre y corte.
+
+MIGRACION DE DATOS MAC -> WINDOWS:
+- La carpeta de datos en Windows es %USERPROFILE%\Documents\ROMERAL_Datos.
+- No se transfieren datos automáticamente desde Mac. Copia la carpeta completa del Mac
+  a Windows SOLO con ROMERAL cerrado en ambos equipos y tras realizar respaldo.
+- SQLite puede tener archivos .sqlite3-wal y .sqlite3-shm; realiza un respaldo consistente
+  con la herramienta RESPALDAR_DATOS.py y confirma su integridad antes de migrar.
+- No ejecutes Mac y Windows simultáneamente con bases independientes si necesitas
+  ventas y cierres consolidados: el sistema actual no tiene sincronización multi-caja.
+
+PENDIENTE DE VALIDACION FISICA EN WINDOWS:
+- Impresión térmica, márgenes, corte, timbre PDF oficial y velocidad.
+- Integración real con Facturacion.com y configuración de credenciales en Windows.
+- Pantalla táctil, escala DPI y resolución del PC.
+- Cierre obligatorio al cambiar la fecha, restauración y reimpresión.
+- API de la web y emisión online por QR NO están habilitadas.
+
+SEGURIDAD:
+- No genera boletas de prueba por sí mismo.
+- Nunca cambia el PDF tributario original; solo prepara copia térmica.
+- Ante impresión incierta, NO vuelvas a emitir DTE; usa reimpresión por folio.

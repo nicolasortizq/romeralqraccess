@@ -1,0 +1,5 @@
+ROMERAL v2.10.10 — Corrección Cabañas y Camping: valor por persona multiplicado por cantidad.
+
+IMPORTANTE: Emisión real NO habilitada automáticamente. No modificar emision_habilitada hasta completar una revisión de seguridad y autorizar el mecanismo de primera emisión.
+La autorización del operador corresponde a UNA boleta real de Entrada General por $12.000. Esta entrega no ha realizado ninguna llamada a Facturacion.com.
+Instalar en carpeta nueva. Mantener respaldos de ROMERAL_Datos.

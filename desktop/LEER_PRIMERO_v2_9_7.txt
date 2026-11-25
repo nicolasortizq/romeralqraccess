@@ -1,0 +1,14 @@
+ROMERAL v2.9.7 - Configuración de credenciales PLANO (pruebas)
+
+CAMBIO: Opciones > Credenciales PLANO (pruebas), requiere clave supervisor.
+RUT, usuario y puerto se guardan en Documentos\ROMERAL_Datos\facturacion_plano.json.
+La CLAVE se guarda exclusivamente en el llavero del sistema operativo mediante keyring, servicio ROMERAL_FACTURACION_PLANO.
+No copiar credenciales de producción al ambiente de pruebas.
+
+ESTA VERSION NO ENVIA BOLETAS DE PRUEBA NI REALES.
+No se ha validado el TXT ni la respuesta de Procesar en PLANO.
+La integración y validación SOAP siguen pendientes.
+La configuración de producción existente y la base de datos NO se modifican con esta actualización.
+
+INSTALACION: cerrar ROMERAL, extraer el ZIP en carpeta nueva, ejecutar Abrir_en_Windows.bat (si faltan dependencias ejecutar INSTALAR_WINDOWS.bat).
+NO reemplazar ni borrar Documentos\ROMERAL_Datos.

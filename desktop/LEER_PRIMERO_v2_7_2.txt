@@ -1,0 +1,11 @@
+ROMERAL v2.7.2 — Confirmación de impresión sin ventana modal.
+
+Después de enviar una boleta a la cola CUPS, la barra de estado muestra el folio y deja libre la pantalla. No requiere pulsar OK.
+
+Si falla la impresión después de emitir, se mantiene una alerta visible; no repitas la venta.
+
+La recepción del trabajo por CUPS no garantiza la impresión física.
+
+Se mantienen emisión única, reimpresión por folio, diagnósticos y datos persistentes en ~/Documents/ROMERAL_Datos.
+
+Instalar en carpeta nueva y respaldar ROMERAL_Datos antes de actualizar.

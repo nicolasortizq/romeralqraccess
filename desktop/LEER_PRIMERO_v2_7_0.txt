@@ -1,0 +1,9 @@
+ROMERAL v2.7.0 — sondeo rápido de PDF y medición de tiempos
+
+La emisión SOAP continúa siendo una sola por venta. La recuperación del PDF comienza inmediatamente, con esperas 1,1,2,2,3,4,5,6,8 segundos solo si el proveedor todavía no entrega PDF válido.
+
+La duración total también depende de los tiempos de respuesta SOAP, descarga y procesamiento. Se genera en Documentos/ROMERAL_Datos/romeral_tiempos_impresion.jsonl un registro sin credenciales ni URLs para identificar demoras.
+
+No borres Documentos/ROMERAL_Datos. Haz respaldo antes de instalar.
+
+Prueba la impresión automática únicamente con una venta real.

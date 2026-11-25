@@ -1,0 +1,15 @@
+ROMERAL v2.8.0 — CANDIDATA DE PRUEBAS
+
+CAMBIOS
+- Barra superior compacta y accesos administrativos agrupados en «Más opciones».
+- Botones de acceso y modalidades con esquinas redondeadas.
+- Estado CAF DTE 39 permanentemente visible en la zona superior; consulta automática cada 15 minutos.
+- Opción «Solicitar nuevos folios DTE 39» en el panel supervisor. Es informativa: NO envía una solicitud por API, porque ese método no está confirmado.
+- Conserva las rutinas de ventas, emisión e impresión de la versión 2.7.9.
+
+IMPORTANTE
+- El saldo es ESTIMADO según CAF; no es una garantía de folios disponibles en otros canales.
+- No reemplaces la versión operativa sin probar la interfaz, la impresión y la integración en el equipo real.
+- Respaldar ~/Documents/ROMERAL_Datos antes de iniciar. NO borrar esa carpeta.
+- Para probar interfaz y folios no hace falta emitir DTE reales.
+- Este paquete se probó en Linux con pantalla virtual; no se ha validado aún en macOS ni Windows ni con Facturacion.com en vivo.

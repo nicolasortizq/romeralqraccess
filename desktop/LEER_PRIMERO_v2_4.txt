@@ -1,0 +1,22 @@
+ROMERAL v2.4 — REGISTRO Y EMISIÓN DTE 39 AUTOMÁTICOS
+
+Al pulsar ENTER · REGISTRAR VENTA, el sistema guarda la venta y realiza UNA transmisión real a Facturacion.com, sin segunda confirmación. Se muestra el resultado SOAP. Esta acción tiene efectos tributarios reales.
+
+SEGURIDAD:
+- El módulo EMISION_REAL_CONTROLADA.py sigue siendo el único emisor y reserva el intento antes de llamar al proveedor.
+- No reintenta ante errores ni timeouts. En esos casos consultar Facturacion.com antes de actuar.
+- No borrar ~/Documents/ROMERAL_Datos, ni la bitácora ni la evidencia XML.
+- La venta N.º 5 y su folio 26184 no se reenvían.
+- Evitar cerrar ROMERAL durante una emisión.
+
+IMPRESIÓN:
+- La descarga del PDF tributario desde Facturacion.com sigue siendo MANUAL: el proveedor no ha confirmado un endpoint de recuperación del PDF/ticket oficial. Botón «PDF boleta» abre el PDF descargado para imprimir.
+- No se afirma impresión automática. No sustituir el PDF oficial por comprobantes internos.
+
+INSTALACIÓN:
+1. Cerrar ROMERAL y respaldar ~/Documents/ROMERAL_Datos.
+2. Descomprimir en carpeta nueva.
+3. Abrir Abrir_en_Mac.command.
+4. Antes de una venta real, revisar el estado de DTE y la configuración de producción.
+
+NOTA: Se ha comprobado la sintaxis del código, no se ha ejecutado una nueva venta real con esta versión. No incluye credenciales ni bases de datos.

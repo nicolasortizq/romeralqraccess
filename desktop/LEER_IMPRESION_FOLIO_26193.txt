@@ -1,0 +1,9 @@
+ROMERAL - Prueba de impresión del documento existente folio 26193.
+1. Cierra ROMERAL y respalda Documentos\ROMERAL_Datos.
+2. Mantén la emisión general deshabilitada. NO ejecutes EMISION_UNICA_REAL_12000_Windows.bat otra vez.
+3. Comprueba que SumatraPDF esté instalado y que la impresora de 80 mm esté configurada.
+4. Ejecuta IMPRIMIR_BOLETA_26193_80MM.bat.
+5. La herramienta verifica que la venta local sea Entrada General, 1 persona, Efectivo, $12.000, DTE39 EMITIDA, folio 26193.
+6. Recupera el PDF oficial mediante consulta de solo lectura y lo envía a la cola térmica; no emite otra boleta.
+7. Verifica la salida física y el timbre. Si falla, envía una foto del error; no repitas emisión.
+Nota: El sistema ROMERAL ya contiene la rutina de impresión automática para ventas futuras, pero la emisión general permanece bloqueada hasta la validación de esta prueba y su activación deliberada.

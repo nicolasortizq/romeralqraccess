@@ -1,0 +1,63 @@
+# systemd unit for the romeralQRAccess Django backend (Gunicorn).
+#
+# Install as /etc/systemd/system/gunicorn-romeral.service (setup_vps.sh
+# does this), then:
+#   systemctl daemon-reload
+#   systemctl enable --now gunicorn-romeral
+#
+# Assumptions (documented, not yet verified against a real VPS: it is not
+# contracted at the time this file was written):
+#   - App checked out at /srv/romeral/app, with the Django project in
+#     /srv/romeral/app/backend (matches this repo's own layout).
+#   - A Python virtualenv already exists at
+#     /srv/romeral/app/backend/.venv with gunicorn and backend/requirements.txt
+#     installed into it.
+#   - A dedicated, unprivileged system user "romeral" owns the app
+#     checkout and runs this service (created by setup_vps.sh).
+#   - The service's primary group is "nginx" (not "romeral") on purpose:
+#     Gunicorn creates the Unix socket as this user/group with mode 0660
+#     (via UMask=0007 below), so the Nginx worker process (which runs as
+#     user "nginx" on AlmaLinux 9) can read/write it without the socket
+#     being world-accessible. setup_vps.sh adds "romeral" to the "nginx"
+#     system group accordingly, but systemd's Group= here governs the
+#     actual process gid regardless.
+#   - Secrets (DJANGO_SECRET_KEY, DATABASE_URL, SMTP, WooCommerce keys)
+#     live only in backend/.env, which is never committed (see
+#     backend/.env.example for the documented keys) and is read here via
+#     EnvironmentFile.
+
+[Unit]
+Description=Gunicorn daemon for romeralQRAccess (Django backend)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=romeral
+Group=nginx
+UMask=0007
+WorkingDirectory=/srv/romeral/app/backend
+EnvironmentFile=/srv/romeral/app/backend/.env
+RuntimeDirectory=romeral
+RuntimeDirectoryMode=0750
+ExecStart=/srv/romeral/app/backend/.venv/bin/gunicorn \
+    core.wsgi:application \
+    --bind unix:/run/romeral/gunicorn.sock \
+    --workers 3 \
+    --timeout 30 \
+    --access-logfile /srv/romeral/app/backend/logs/gunicorn-access.log \
+    --error-logfile /srv/romeral/app/backend/logs/gunicorn-error.log
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=3
+
+# Hardening: this service only needs to read/write its own app directory,
+# write its runtime socket, and reach PostgreSQL/SMTP/WooCommerce over
+# the network.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/srv/romeral/app/backend/logs /run/romeral
+
+[Install]
+WantedBy=multi-user.target

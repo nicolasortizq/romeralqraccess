@@ -1,0 +1,12 @@
+Django>=6.1,<6.2
+django-ninja>=1.8,<2
+dj-database-url>=3.1,<4
+python-dotenv>=1.2,<2
+psycopg[binary]>=3.3,<4
+pytest>=8.3,<9
+pytest-django>=4.9,<5
+qrcode[pil]>=8,<9
+requests>=2.34,<3
+
+# Production WSGI server, run by deploy/gunicorn.service on the VPS.
+gunicorn>=23,<24

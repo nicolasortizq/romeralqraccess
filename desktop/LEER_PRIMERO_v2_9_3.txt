@@ -1,0 +1,9 @@
+ROMERAL v2.9.3 - Diagnostico CAF Windows
+
+CAMBIOS: El diagnostico de produccion reconoce RangoDesde y RangoHasta, ademas de FolioDesde/FolioHasta. Admite fechas con hora en formatos comunes. Informa saldo ESTIMADO solo cuando rango y siguiente folio son coherentes. NO certifica autenticacion ni saldo utilizable.
+
+INSTALACION: Cierra ROMERAL, extrae este ZIP en una carpeta nueva y ejecuta Abrir_en_Windows.bat. No borres Documentos\ROMERAL_Datos: ahi permanecen las credenciales configuradas, datos y la impresora.
+
+PRUEBA SEGURA: Opciones > Facturacion > Diagnosticar CAF produccion - solo lectura. NO registrar ventas reales. Emision real sigue deshabilitada.
+
+LIMITACION: No se ha probado conexion en el Windows del usuario; fecha y respuesta del proveedor requieren validacion con la consulta real.

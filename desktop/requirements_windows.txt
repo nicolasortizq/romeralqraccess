@@ -1,0 +1,8 @@
+requests>=2.31,<3
+zeep>=4.2,<5
+keyring>=24,<27
+PyMuPDF>=1.24,<2
+Pillow>=10,<13
+numpy>=1.26,<3
+
+reportlab>=4.0,<5

@@ -476,15 +476,19 @@ Expected: FAIL
 
 - [ ] **Step 3: Implement the router in `backend/tickets/api.py` and mount it in `backend/core/urls.py`**
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [ ] **Step 4: Add `display_status` to the `OnlineTicket` schema in `docs/api/openapi.yaml`**
+
+Task 1 did not anticipate this derived, read-only field (string, e.g. `"fuera de temporada"`, or null/absent when the stored `status` already reflects reality). Add it now so the contract matches the implementation.
+
+- [ ] **Step 5: Run tests to verify they pass**
 
 Run: `pytest backend/tickets/tests/test_api_lookup.py -v`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add backend/tickets/api.py backend/core/urls.py backend/tickets/tests/test_api_lookup.py
+git add backend/tickets/api.py backend/core/urls.py backend/tickets/tests/test_api_lookup.py docs/api/openapi.yaml
 git commit -m "feat: add ticket lookup and search API endpoints"
 ```
 
@@ -619,14 +623,20 @@ git commit -m "feat: add invoice status callback endpoint"
 
 **Interfaces:**
 - Consumes: `qr.generate_code`/`hash_code` (Task 7), `OnlineTicket`/`OnlineTicketLine`/`Season` (Task 6).
-- Produces: `POST /api/v1/woocommerce/webhook`, registered in `backend/core/urls.py`. On success, creates one `OnlineTicket` with `source="WEBHOOK"` and one `OnlineTicketLine` per order line item, and calls `emails.send_ticket_email` (Task 13's interface, imported but not yet implemented — stub it to a no-op if Task 13 hasn't landed yet, matching whichever task actually runs first in execution order).
+- Produces: `POST /api/v1/woocommerce/webhook`, registered in `backend/core/urls.py`, handling every order-webhook WooCommerce sends to this one URL (order created/updated carries the order's current `status` field — there is no separate "cancelled" event type to special-case). Branches on the payload's `status`:
+  - `processing`/`completed` and no existing ticket for that `woo_order_id`: creates one `OnlineTicket` with `source="WEBHOOK"` and one `OnlineTicketLine` per order line item, and calls `emails.send_ticket_email` (Task 13's interface, imported but not yet implemented — stub it to a no-op if Task 13 hasn't landed yet, matching whichever task actually runs first in execution order).
+  - `processing`/`completed` and a ticket already exists: no-op (idempotent — the order was already seen).
+  - `cancelled`/`refunded` and an existing ticket is `VALID`: sets it to `CANCELLED` and writes a `TicketEvent(event_type="anulada")`. Per `docs/PROYECTO.md` 5.1 ("si un pedido se anula o reembolsa, la entrada pasa a anulada").
+  - `cancelled`/`refunded` and an existing ticket is `REDEEMED` (boleta already issued): sets it to `REFUNDED_AFTER_REDEMPTION` instead of `CANCELLED` and writes a `TicketEvent(event_type="reembolsada tras canje")` — the design doc's resolution; this case is left for Fase 3 to settle on the accounting side, Fase 1 only needs it visible and distinct.
+  - `cancelled`/`refunded` and no ticket exists for that order: no-op.
+- Produces a shared `create_ticket_from_order(order: dict, send_email: bool = True) -> OnlineTicket` function in this file; Tasks 14 and 15 import it rather than re-implementing order-to-ticket creation.
 
 - [ ] **Step 1: Write failing tests**
 
 ```python
 def test_webhook_with_valid_signature_creates_ticket(client, settings):
     settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
-    payload = sample_paid_order_payload(order_id=501, total="12000")
+    payload = sample_order_payload(order_id=501, status="processing", total="12000")
     signature = compute_wc_signature(payload, "shhh")
     resp = client.post("/api/v1/woocommerce/webhook", data=payload,
                         headers={"X-WC-Webhook-Signature": signature})
@@ -634,25 +644,41 @@ def test_webhook_with_valid_signature_creates_ticket(client, settings):
     assert OnlineTicket.objects.filter(woo_order_id=501).exists()
 
 def test_webhook_with_missing_signature_is_rejected(client):
-    resp = client.post("/api/v1/woocommerce/webhook", data=sample_paid_order_payload(order_id=502))
+    resp = client.post("/api/v1/woocommerce/webhook", data=sample_order_payload(order_id=502, status="processing"))
     assert resp.status_code == 401
     assert not OnlineTicket.objects.filter(woo_order_id=502).exists()
 
 def test_webhook_with_wrong_signature_is_rejected(client, settings):
     settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
-    payload = sample_paid_order_payload(order_id=503)
+    payload = sample_order_payload(order_id=503, status="processing")
     resp = client.post("/api/v1/woocommerce/webhook", data=payload,
                         headers={"X-WC-Webhook-Signature": "wrong"})
     assert resp.status_code == 401
 
 def test_webhook_is_idempotent_on_duplicate_order_id(client, settings):
     settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
-    payload = sample_paid_order_payload(order_id=504)
+    payload = sample_order_payload(order_id=504, status="processing")
     signature = compute_wc_signature(payload, "shhh")
     client.post("/api/v1/woocommerce/webhook", data=payload, headers={"X-WC-Webhook-Signature": signature})
     resp = client.post("/api/v1/woocommerce/webhook", data=payload, headers={"X-WC-Webhook-Signature": signature})
     assert resp.status_code == 200
     assert OnlineTicket.objects.filter(woo_order_id=504).count() == 1
+
+def test_webhook_cancels_an_unredeemed_ticket(client, settings):
+    settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
+    make_online_ticket(woo_order_id=505, status="VALID")
+    payload = sample_order_payload(order_id=505, status="cancelled")
+    signature = compute_wc_signature(payload, "shhh")
+    client.post("/api/v1/woocommerce/webhook", data=payload, headers={"X-WC-Webhook-Signature": signature})
+    assert OnlineTicket.objects.get(woo_order_id=505).status == "CANCELLED"
+
+def test_webhook_refund_after_redemption_does_not_cancel(client, settings):
+    settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
+    make_online_ticket(woo_order_id=506, status="REDEEMED")
+    payload = sample_order_payload(order_id=506, status="refunded")
+    signature = compute_wc_signature(payload, "shhh")
+    client.post("/api/v1/woocommerce/webhook", data=payload, headers={"X-WC-Webhook-Signature": signature})
+    assert OnlineTicket.objects.get(woo_order_id=506).status == "REFUNDED_AFTER_REDEMPTION"
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -660,9 +686,9 @@ def test_webhook_is_idempotent_on_duplicate_order_id(client, settings):
 Run: `pytest backend/tickets/tests/test_webhooks.py -v`
 Expected: FAIL
 
-- [ ] **Step 3: Implement `verify_wc_signature(raw_body: bytes, header_value: str) -> bool` and the webhook view in `backend/tickets/webhooks.py`**
+- [ ] **Step 3: Implement `verify_wc_signature(raw_body: bytes, header_value: str) -> bool`, `create_ticket_from_order(order: dict) -> OnlineTicket`, and the webhook view in `backend/tickets/webhooks.py`**
 
-HMAC-SHA256 of the raw request body against `WOOCOMMERCE_WEBHOOK_SECRET`, base64-compared to the header (constant-time compare via `hmac.compare_digest`). Idempotency via `get_or_create(woo_order_id=...)`.
+HMAC-SHA256 of the raw request body against `WOOCOMMERCE_WEBHOOK_SECRET`, base64-compared to the header (constant-time compare via `hmac.compare_digest`). Idempotency via `get_or_create(woo_order_id=...)` on creation; the cancel/refund branch uses `select_for_update()` the same way Task 10's redeem endpoint does, since a cancellation and a redeem could race.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -673,7 +699,7 @@ Expected: PASS
 
 ```bash
 git add backend/tickets/webhooks.py backend/core/urls.py backend/tickets/tests/test_webhooks.py
-git commit -m "feat: add WooCommerce webhook with signature validation"
+git commit -m "feat: add WooCommerce webhook with signature validation and status transitions"
 ```
 
 ---
@@ -736,7 +762,7 @@ git commit -m "feat: send QR ticket email from the approved mock template"
 - Test: `backend/tickets/tests/test_reconcile_orders.py`
 
 **Interfaces:**
-- Consumes: Task 12's ticket-creation logic (extract the "create ticket + line items + send email from an order payload" step into a shared function both the webhook and this command call, so creation logic lives in one place).
+- Consumes: `create_ticket_from_order(order: dict) -> OnlineTicket` from `backend/tickets/webhooks.py` (Task 12) — call it directly rather than re-implementing order-to-ticket creation; do not modify `webhooks.py`.
 - Produces: `WooCommerceClient.list_paid_orders(since: datetime) -> list[dict]` (read-only REST call), run every 10 minutes by `deploy/crontab.txt` (Task 17) as `python manage.py reconcile_orders`.
 
 - [ ] **Step 1: Write failing tests**
@@ -783,8 +809,8 @@ git commit -m "feat: add WooCommerce reconciliation command"
 - Test: `backend/tickets/tests/test_import_prior_orders.py`
 
 **Interfaces:**
-- Consumes: `WooCommerceClient` (Task 14), shared ticket-creation function (Task 14's extraction).
-- Produces: `python manage.py import_prior_orders --season-id=<id> [--send-email]`, run once by hand against the real store once WooCommerce keys exist (external blocker, flagged in Global Constraints — this task's tests don't need the real keys, only a mocked client).
+- Consumes: `WooCommerceClient` (Task 14), `create_ticket_from_order` (Task 12, via `backend/tickets/webhooks.py`).
+- Produces: `python manage.py import_prior_orders --season-id=<id> [--send-email]`, run once by hand against the real store once WooCommerce keys exist (external blocker, flagged in Global Constraints — this task's tests don't need the real keys, only a mocked client). When `--send-email` is absent, `create_ticket_from_order` must still run but its email step must not fire — pass it a `send_email: bool = True` parameter (add this parameter to Task 12's `create_ticket_from_order` signature).
 
 - [ ] **Step 1: Write failing tests**
 

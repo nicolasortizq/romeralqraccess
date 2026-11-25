@@ -1,0 +1,3 @@
+ROMERAL v2.10.15.1
+Cambio: identificacion visual de version en titulo y encabezado.
+No se modificaron funciones de emision, impresion ni conciliacion.

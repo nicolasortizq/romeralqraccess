@@ -1,0 +1,14 @@
+ROMERAL v2.10.5 – Windows | Control de habilitación productiva
+
+BASE: v2.10.4 recibida. Se conserva la interfaz de caja y la impresión de 80 mm.
+
+CAMBIOS:
+1. EMISION_REAL_CONTROLADA.py ahora EXIGE emision_habilitada=true (booleano JSON) antes de cualquier reserva o llamada SOAP. Con false, no transmite un DTE.
+2. El panel Estado de producción aclara que es de SOLO LECTURA; no declara bloqueada toda la aplicación.
+3. Se mantienen el registro durable de intentos, la conciliación y la recuperación del PDF oficial existentes.
+
+IMPORTANTE: Esta versión NO está certificada en producción. No cambiar emision_habilitada a true sin revisar previamente el circuito tributario con el responsable técnico y el proveedor. La existencia de credenciales y folios NO confirma permiso para emitir.
+
+ANTES DE ACTUALIZAR: respaldar Documentos\ROMERAL_Datos. No reemplazar la instalación operativa hasta validar en entorno controlado. No compartir credenciales.
+
+NO repetir Registrar ni el envío SOAP si hay timeout, respuesta incierta o error de impresión; revisar el estado de la venta en Facturacion.com.

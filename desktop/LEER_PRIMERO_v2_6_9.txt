@@ -1,0 +1,23 @@
+ROMERAL v2.6.9 — Impresión automática con espera del PDF oficial
+
+CORRECCIÓN
+- Tras una emisión confirmada, ROMERAL recupera el PDF oficial con hasta 7 consultas de solo lectura, espaciadas en ~40 segundos.
+- Si Facturacion.com entrega HTML o un enlace todavía no disponible, espera y vuelve a intentar descargar el PDF, sin emitir otra boleta.
+- Solo imprime una vez, después de obtener un PDF válido.
+- Conserva el folio y permite reimpresión por folio cuando la descarga no se complete.
+- Registra el envío automático a la cola de impresión en eventos_dte.
+
+INSTALACIÓN
+1. Cerrar ROMERAL.
+2. Respaldar la carpeta ~/Documents/ROMERAL_Datos (NO borrarla).
+3. Descomprimir este ZIP en una carpeta nueva y abrir Abrir_en_Mac.command.
+4. Conservar los archivos de datos y credenciales existentes en su ubicación original.
+
+VALIDACIÓN
+La reimpresión del folio 26186 ya fue comprobada en v2.6.8. Esta versión requiere
+una venta real futura para comprobar el flujo automático completo. No emitir una
+boleta ficticia ni repetir una venta si aparece un error.
+
+NOTA
+La confirmación de CUPS significa que el trabajo fue enviado a la cola; verificar
+siempre que la boleta salga físicamente y sea legible.

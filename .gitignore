@@ -23,6 +23,10 @@ dist/
 *.pfx
 facturacion_*.json
 
+# Application logs (backend/logs/, written by core.settings' LOGGING)
+logs/
+*.log
+
 # Local data: never commit real sales, CAF files or databases
 ROMERAL_Datos/
 *.sqlite3
@@ -38,3 +42,4 @@ node_modules/
 
 # Worktrees
 .worktrees/
+desktop/.venv/

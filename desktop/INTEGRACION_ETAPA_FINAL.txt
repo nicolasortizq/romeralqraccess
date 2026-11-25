@@ -1,0 +1,20 @@
+ROMERAL - Integración de conciliación SOAP DTE 39
+
+Se incorpora puente_soap_dte.py, que conecta el analizador SOAP existente
+con las tablas control_emision, ventas y conciliacion_eventos.
+
+El puente recibe exclusivamente una respuesta XML de Procesar obtenida de
+una operación previamente autorizada. Solo acepta una venta reservada,
+no anulada y tipo 39. Un éxito explícito y un folio positivo se registran;
+rechazos quedan REVISAR y resultados ambiguos quedan INCIERTA.
+Registra una huella SHA256 de la respuesta como referencia de evidencia.
+No realiza llamadas de red ni genera documentos tributarios.
+
+LIMITACIÓN IMPORTANTE: esta etapa integra la conciliación de respuestas,
+NO el envío productivo. Falta validar el TXT con el proveedor y conectar
+un envío controlado con persistencia previa a la transmisión. No reemplazar
+la instalación productiva hasta que se complete ese proceso.
+
+La recuperación del PDF se documenta con ObtenerPdf/ObtenerLink; la
+impresión térmica con getBoletaTicket requiere módulo BETICKET habilitado.
+Fuente: https://www.facturacion.cl/manualintegracion/integracionservicioweb.php

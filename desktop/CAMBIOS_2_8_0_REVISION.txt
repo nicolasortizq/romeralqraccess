@@ -1,0 +1,10 @@
+ROMERAL v2.8.0 - revisión visual de folios y modalidad
+
+1. Modalidad activa en rojo (#C62828), con marca ✓; las restantes conservan su color.
+2. Panel principal DTE39 muestra próximo folio informado, restantes estimados y última sincronización.
+3. Si la consulta CAF falla, los indicadores se muestran como — y el estado Sin sincronización.
+4. Los datos de CAF son estimaciones, no certificación de saldo utilizable.
+5. No se modificaron las funciones de emisión, impresión ni la base de datos.
+
+Pruebas realizadas: compilación Python y comprobación estática de cambios. Pendiente: validación de interfaz y conexión real en Mac.
+Mantener v2.7.9 como respaldo y realizar copia de ~/Documents/ROMERAL_Datos.

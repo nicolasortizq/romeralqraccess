@@ -1,0 +1,15 @@
+ROMERAL v2.10.14 - Caja con emisión e impresión automáticas DTE 39.
+
+IMPORTANTE: No se activa automáticamente al descomprimir el ZIP.
+La activación es una decisión de producción que debe hacerse en el PC de caja.
+
+1. Respaldar Documents\ROMERAL_Datos completo y cerrar ROMERAL.
+2. Descomprimir esta versión en carpeta NUEVA; instalar dependencias si es necesario.
+3. Ejecutar ACTIVAR_VENTAS_AUTOMATICAS_Windows.bat y confirmar conscientemente.
+4. Abrir Abrir_en_Windows.bat.
+5. Cada Registrar venta guarda venta, realiza un único envío SOAP, recupera PDF oficial y manda el ticket aprobado de 80mm a la cola de impresión.
+6. Si emisión es incierta: NO repetir, conciliar en Facturacion.com. El sistema bloquea ventas nuevas cuando existe envío INCIERTO o ENVIO_INICIADO.
+7. Si falla solo la impresión: NO repetir la venta. Usar Reimprimir boleta por folio.
+8. El resultado 'enviado a cola' NO garantiza que el papel haya salido; verificar impresora físicamente.
+
+No se han ejecutado emisiones desde este paquete. La prueba real final solo se puede realizar en el equipo Windows conectado al servicio.
