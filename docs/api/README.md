@@ -285,7 +285,7 @@ Una vez desplegado el backend, Django Ninja publica la documentación
 interactiva (generada desde el mismo contrato OpenAPI) en:
 
 ```
-https://acceso.vallederomeral.cl/api/docs
+https://acceso.vallederomeral.cl/api/v1/docs
 ```
 
 Ahí se puede ver cada endpoint, probar solicitudes con una clave de

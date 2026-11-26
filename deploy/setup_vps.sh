@@ -57,11 +57,22 @@ require_root() {
 
 install_packages() {
     log "Installing system packages (dnf is idempotent: already-installed packages are skipped)"
+
+    # Django 6.1 requires PostgreSQL 15 or later. AlmaLinux 9's own
+    # AppStream module only ships PostgreSQL 13, so pull a current
+    # version from the official PostgreSQL (PGDG) repository instead.
+    if ! rpm -q pgdg-redhat-repo >/dev/null 2>&1; then
+        dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+    fi
+    # The AppStream "postgresql" module must be disabled, or dnf resolves
+    # the PGDG packages against AppStream's older module metadata.
+    dnf -qy module disable postgresql || true
+
     dnf install -y \
         python3.12 \
         python3.12-pip \
-        postgresql-server \
-        postgresql-contrib \
+        postgresql16-server \
+        postgresql16-contrib \
         nginx \
         certbot \
         python3-certbot-nginx \
@@ -70,11 +81,11 @@ install_packages() {
     # initdb only initializes the data directory once; running it again
     # on an already-initialized cluster is a no-op (and exits non-zero,
     # hence the guard) rather than wiping existing data.
-    if [[ ! -f /var/lib/pgsql/data/PG_VERSION ]]; then
-        log "Initializing PostgreSQL data directory"
-        postgresql-setup --initdb
+    if [[ ! -f /var/lib/pgsql/16/data/PG_VERSION ]]; then
+        log "Initializing PostgreSQL 16 data directory"
+        /usr/pgsql-16/bin/postgresql-16-setup initdb
     else
-        log "PostgreSQL data directory already initialized, skipping initdb"
+        log "PostgreSQL 16 data directory already initialized, skipping initdb"
     fi
 }
 
@@ -122,24 +133,25 @@ parse_database_url() {
 }
 
 setup_database() {
-    log "Ensuring PostgreSQL is running"
-    systemctl enable --now postgresql
+    log "Ensuring PostgreSQL 16 is running"
+    systemctl enable --now postgresql-16
+    local psql=(/usr/pgsql-16/bin/psql)
 
     parse_database_url
 
     log "Ensuring PostgreSQL role '${DB_USER}' exists"
-    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" | grep -q 1; then
-        sudo -u postgres psql -c "CREATE ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASSWORD}';"
+    if ! sudo -u postgres "${psql[@]}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" | grep -q 1; then
+        sudo -u postgres "${psql[@]}" -c "CREATE ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASSWORD}';"
     else
         # Role exists: keep its password in sync with backend/.env in
         # case it was rotated there, so re-running this script after a
         # credential rotation stays correct instead of silently stale.
-        sudo -u postgres psql -c "ALTER ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASSWORD}';"
+        sudo -u postgres "${psql[@]}" -c "ALTER ROLE \"${DB_USER}\" WITH LOGIN PASSWORD '${DB_PASSWORD}';"
     fi
 
     log "Ensuring database '${DB_NAME}' exists"
-    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1; then
-        sudo -u postgres psql -c "CREATE DATABASE \"${DB_NAME}\" OWNER \"${DB_USER}\";"
+    if ! sudo -u postgres "${psql[@]}" -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1; then
+        sudo -u postgres "${psql[@]}" -c "CREATE DATABASE \"${DB_NAME}\" OWNER \"${DB_USER}\";"
     else
         log "Database '${DB_NAME}' already exists, skipping"
     fi
@@ -157,6 +169,19 @@ install_configs() {
 
 start_services() {
     log "Enabling firewall ports 80/443"
+
+    # Opening the firewall for the first time can lock out the very SSH
+    # session running this script, if sshd listens on a non-default port
+    # firewalld's default zone doesn't already allow (Hostgator VPS
+    # instances are commonly provisioned with sshd on a custom port).
+    # Detect and keep every port sshd actually listens on before the
+    # first firewall-cmd --reload, instead of discovering the lockout
+    # only after the connection drops.
+    local ssh_port
+    for ssh_port in $(ss -tlnp 2>/dev/null | awk '/sshd/{print $4}' | sed -E 's/.*:([0-9]+)$/\1/' | sort -u); do
+        firewall-cmd --permanent --add-port="${ssh_port}/tcp" >/dev/null
+    done
+
     systemctl enable --now firewalld
     firewall-cmd --permanent --add-service=http >/dev/null
     firewall-cmd --permanent --add-service=https >/dev/null
