@@ -11,6 +11,7 @@ import hashlib
 import hmac
 import json
 import logging
+import re
 
 from django.conf import settings
 from django.db import transaction
@@ -46,6 +47,17 @@ except ModuleNotFoundError as exc:
 
 PAID_STATUSES = {"processing", "completed"}
 CANCEL_STATUSES = {"cancelled", "refunded"}
+
+# WooCommerce sends one unsigned "ping" request to the delivery URL the
+# moment a webhook is created or re-activated in wp-admin, to confirm the
+# URL is reachable before it saves the webhook. That ping's body is always
+# exactly "webhook_id=<id>" (form-encoded, not JSON) and carries no
+# X-WC-Webhook-Signature header at all -- confirmed against a live
+# WooCommerce install, not just documentation, since this is otherwise an
+# easy thing to get wrong. It must return 200 or WooCommerce refuses to
+# ever save the webhook, even though every real order delivery that
+# follows is properly signed and verified below as usual.
+_PING_BODY_RE = re.compile(rb"^webhook_id=\d+$")
 
 
 def verify_wc_signature(raw_body: bytes, header_value: str) -> bool:
@@ -240,6 +252,11 @@ def woocommerce_webhook(request) -> HttpResponse:
     we branch on the order's current status field instead."""
     raw_body = request.body
     signature = request.headers.get("X-WC-Webhook-Signature", "")
+
+    if not signature and _PING_BODY_RE.match(raw_body):
+        logger.info("Acknowledged WooCommerce webhook ping (%r)", raw_body)
+        return JsonResponse({"received": True})
+
     if not verify_wc_signature(raw_body, signature):
         # Logged, not silent: a rejected signature is either a
         # misconfigured secret (every real order is being dropped) or

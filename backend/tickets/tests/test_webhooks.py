@@ -97,6 +97,48 @@ def test_webhook_with_missing_signature_is_rejected(client, settings):
 
 
 @pytest.mark.django_db
+def test_webhook_acknowledges_the_unsigned_wordpress_ping(client, settings):
+    """WooCommerce sends an unsigned 'webhook_id=<id>' ping when a webhook
+    is created or re-activated, to confirm the URL is reachable, before it
+    ever sends a real (signed) order delivery. Confirmed against a live
+    WooCommerce install: the ping genuinely carries no signature header at
+    all. It must be acknowledged with 200, or WooCommerce refuses to save
+    the webhook -- but it must never be treated as order data."""
+    settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
+
+    resp = client.post(
+        "/api/v1/woocommerce/webhook",
+        data=b"webhook_id=1",
+        content_type="application/x-www-form-urlencoded",
+    )
+
+    assert resp.status_code == 200
+    assert resp.json() == {"received": True}
+    assert OnlineTicket.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_webhook_still_rejects_unsigned_json_that_merely_resembles_a_ping(
+    client, settings
+):
+    """Only the exact WooCommerce ping body bypasses signature checking --
+    an unsigned request carrying real-looking order data must still be
+    rejected, even if it happens to also lack a signature header."""
+    settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
+    order_id = next(_order_id_counter)
+    payload = sample_order_payload(order_id=order_id, status="processing")
+
+    resp = client.post(
+        "/api/v1/woocommerce/webhook",
+        data=json.dumps(payload).encode(),
+        content_type="application/json",
+    )
+
+    assert resp.status_code == 401
+    assert not OnlineTicket.objects.filter(woo_order_id=order_id).exists()
+
+
+@pytest.mark.django_db
 def test_webhook_with_wrong_signature_is_rejected(client, settings):
     settings.WOOCOMMERCE_WEBHOOK_SECRET = "shhh"
     order_id = next(_order_id_counter)
