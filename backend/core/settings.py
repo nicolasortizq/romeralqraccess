@@ -234,7 +234,11 @@ EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', default=True)
 EMAIL_USE_SSL = _env_bool('EMAIL_USE_SSL', default=False)
 if EMAIL_USE_SSL:
     EMAIL_USE_TLS = False
-DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', '')
+# The visible "From" address can differ from the SMTP login: Gmail/Google
+# Workspace lets a single paid account send as any of its free aliases
+# (e.g. logging in as info@..., sending as entradas@...), so this is a
+# separate setting rather than always reusing EMAIL_HOST_USER.
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL') or os.environ.get('EMAIL_HOST_USER', '')
 
 
 # WooCommerce integration (Task 6+: webhook signature check and REST client)
