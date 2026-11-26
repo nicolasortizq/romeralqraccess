@@ -131,6 +131,73 @@ def test_redeem_ticket_past_valid_until_returns_409(client, active_terminal_key)
     assert ticket.status != "REDEEMED"
 
 
+@pytest.mark.django_db
+def test_redeem_on_a_blackout_date_is_rejected_with_its_reason(
+    client, active_terminal_key
+):
+    """Rodrigo sells presencial at a higher price on Jan 1 (or any other
+    configured blackout date) due to demand; an online ticket bought at
+    the regular season price must not grant entry that day, even though
+    it's otherwise VALID and within valid_until."""
+    from django.utils import timezone
+
+    from tickets.models import SeasonBlackoutDate
+
+    ticket = make_online_ticket(code_hash=hash_code("VR1NYD"), status="VALID")
+    SeasonBlackoutDate.objects.create(
+        season=ticket.season,
+        date=timezone.localdate(),
+        reason="Tarifa especial de alta demanda.",
+    )
+
+    resp = client.post(
+        "/api/v1/tickets/VR1NYD/redeem",
+        data={"terminal": "Acceso 1", "redeemed_by": "cajero1"},
+        content_type="application/json",
+        headers={"X-Terminal-Key": active_terminal_key},
+    )
+
+    assert resp.status_code == 409
+    assert resp.json()["detail"] == "Tarifa especial de alta demanda."
+
+    ticket.refresh_from_db()
+    assert ticket.status == "VALID"
+
+
+@pytest.mark.django_db
+def test_redeem_on_a_non_blackout_date_is_unaffected_by_other_seasons_blackouts(
+    client, active_terminal_key
+):
+    """A blackout date only applies to its own season -- creating one for
+    some other season's Jan 1 must never block redemption of a ticket in
+    the season actually being used today."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from tickets.models import SeasonBlackoutDate
+
+    ticket = make_online_ticket(code_hash=hash_code("VR1OK"), status="VALID")
+    other_season = make_season(name="otra-temporada", is_active=False)
+    SeasonBlackoutDate.objects.create(
+        season=other_season, date=timezone.localdate()
+    )
+    # And a blackout for the ticket's own season, but on a different day.
+    SeasonBlackoutDate.objects.create(
+        season=ticket.season, date=timezone.localdate() + timedelta(days=30)
+    )
+
+    resp = client.post(
+        "/api/v1/tickets/VR1OK/redeem",
+        data={"terminal": "Acceso 1", "redeemed_by": "cajero1"},
+        content_type="application/json",
+        headers={"X-Terminal-Key": active_terminal_key},
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "REDEEMED"
+
+
 @pytest.mark.django_db(transaction=True)
 def test_concurrent_redeem_requests_only_one_succeeds():
     # transaction=True disables the test's wrapping transaction, so the

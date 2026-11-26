@@ -11,13 +11,30 @@ management command.
 
 from django.contrib import admin
 
-from tickets.models import OnlineTicket, OnlineTicketLine, Season, Terminal, TicketEvent
+from tickets.models import (
+    OnlineTicket,
+    OnlineTicketLine,
+    Season,
+    SeasonBlackoutDate,
+    Terminal,
+    TicketEvent,
+)
+
+
+class SeasonBlackoutDateInline(admin.TabularInline):
+    """So Nico or Rodrigo can add/remove a blackout date (e.g. Jan 1,
+    sold presencial at a higher price) from the Season's own admin page,
+    without a code change or a deploy."""
+
+    model = SeasonBlackoutDate
+    extra = 0
 
 
 @admin.register(Season)
 class SeasonAdmin(admin.ModelAdmin):
     list_display = ("name", "starts_on", "ends_on", "is_active")
     list_filter = ("is_active",)
+    inlines = (SeasonBlackoutDateInline,)
 
 
 @admin.register(Terminal)

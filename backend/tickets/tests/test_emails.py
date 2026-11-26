@@ -109,3 +109,25 @@ def test_email_shows_buyer_purchase_date_and_item_lines(db, mailoutbox):
     assert ticket.purchased_at.strftime("%d-%m-%Y") in html
     assert "Entrada General" in html
     assert "$24.000" in html
+
+
+def test_email_mentions_blackout_dates_when_the_season_has_any(db, mailoutbox):
+    from tickets.models import SeasonBlackoutDate
+
+    ticket = make_online_ticket(valid_until=date(2027, 2, 28))
+    SeasonBlackoutDate.objects.create(season=ticket.season, date=date(2027, 1, 1))
+
+    send_ticket_email(ticket, "VR1ABC")
+
+    html = mailoutbox[0].alternatives[0][0]
+    assert "no válida el 1 de enero de 2027" in html
+    assert "no válida el 1 de enero de 2027" in mailoutbox[0].body
+
+
+def test_email_says_nothing_extra_when_the_season_has_no_blackout_dates(
+    db, mailoutbox
+):
+    ticket = make_online_ticket(valid_until=date(2027, 2, 28))
+    send_ticket_email(ticket, "VR1ABC")
+    html = mailoutbox[0].alternatives[0][0]
+    assert "no válida" not in html

@@ -33,13 +33,31 @@ _MESES = (
 )
 
 
-def _format_valid_until(valid_until) -> str:
+def _format_long_date(d) -> str:
     """Formats a date as 'D de <mes> de AAAA', the copy approved in the
     mock. Built manually (not via Django's date filter) so the Spanish
     month name does not depend on LANGUAGE_CODE/locale activation."""
-    if isinstance(valid_until, str):
-        valid_until = parse_date(valid_until)
-    return f"{valid_until.day} de {_MESES[valid_until.month - 1]} de {valid_until.year}"
+    if isinstance(d, str):
+        d = parse_date(d)
+    return f"{d.day} de {_MESES[d.month - 1]} de {d.year}"
+
+
+def _format_valid_until(valid_until) -> str:
+    return _format_long_date(valid_until)
+
+
+def _blackout_note(season) -> str:
+    """Builds the "(no valida el 1 de enero)"-style suffix for the
+    validity line, from this season's SeasonBlackoutDate rows -- added
+    because Rodrigo sells presencial at a higher price on Jan 1 due to
+    demand, so a buyer must see upfront that their online ticket won't
+    work that specific day. Empty string if the season has none."""
+    dates = [bd.date for bd in season.blackout_dates.all()]
+    if not dates:
+        return ""
+    formatted = " y ".join(_format_long_date(d) for d in dates)
+    prefix = "el" if len(dates) == 1 else "los días"
+    return f" (no válida {prefix} {formatted})"
 
 
 def _people_label(people_count: int) -> str:
@@ -151,6 +169,7 @@ def send_ticket_email(ticket, code: str) -> None:
         "purchased_at_label": _short_date(ticket.purchased_at),
         "people_label": _people_label(ticket.people_count),
         "valid_until_label": _format_valid_until(ticket.valid_until),
+        "blackout_note": _blackout_note(ticket.season),
         "lines": [
             {
                 "product_name": line.product_name,
@@ -173,7 +192,8 @@ def send_ticket_email(ticket, code: str) -> None:
         f"Muestra el codigo QR de este correo en el acceso. Si la imagen no "
         f"se ve, dicta o escribe el codigo de arriba.\n\n"
         f"Personas: {_people_label(ticket.people_count)}\n"
-        f"Valida hasta el {_format_valid_until(ticket.valid_until)}.\n"
+        f"Valida hasta el {_format_valid_until(ticket.valid_until)}"
+        f"{_blackout_note(ticket.season)}.\n"
     )
 
     message = _RelatedMultipartEmail(

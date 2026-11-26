@@ -99,3 +99,43 @@ def test_search_without_order_or_email_is_rejected(client, active_terminal_key):
 def test_missing_terminal_key_is_rejected(client):
     resp = client.get("/api/v1/tickets/VR1ABC")
     assert resp.status_code == 401
+
+
+@pytest.mark.django_db
+def test_lookup_on_a_blackout_date_reports_its_reason(client, active_terminal_key):
+    """Jan 1 (or any other configured blackout date): the ticket is still
+    VALID in the database and still within valid_until, but the cashier
+    screen must show why it can't be redeemed today, before they try."""
+    from django.utils import timezone
+
+    from tickets.models import SeasonBlackoutDate
+
+    ticket = make_online_ticket(code_hash=hash_code("VR1NYD"))
+    SeasonBlackoutDate.objects.create(
+        season=ticket.season,
+        date=timezone.localdate(),
+        reason="Tarifa especial de alta demanda.",
+    )
+
+    resp = client.get(
+        "/api/v1/tickets/VR1NYD", headers={"X-Terminal-Key": active_terminal_key}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["display_status"] == "Tarifa especial de alta demanda."
+
+
+@pytest.mark.django_db
+def test_lookup_on_a_blackout_date_with_no_reason_set_uses_a_default(
+    client, active_terminal_key
+):
+    from django.utils import timezone
+
+    from tickets.models import SeasonBlackoutDate
+
+    ticket = make_online_ticket(code_hash=hash_code("VR1NYD2"))
+    SeasonBlackoutDate.objects.create(season=ticket.season, date=timezone.localdate())
+
+    resp = client.get(
+        "/api/v1/tickets/VR1NYD2", headers={"X-Terminal-Key": active_terminal_key}
+    )
+    assert resp.json()["display_status"] == "Esta entrada no es valida hoy."

@@ -6,6 +6,7 @@ from tickets.models import (
     OnlineTicket,
     OnlineTicketLine,
     Season,
+    SeasonBlackoutDate,
     Terminal,
     TicketEvent,
 )
@@ -183,3 +184,22 @@ def test_a_second_inactive_season_is_allowed(db):
         is_active=False,
     )
     assert Season.objects.count() == 2
+
+
+@pytest.mark.django_db
+def test_season_blackout_date_links_to_season_with_a_reason():
+    season = make_season()
+    blackout = SeasonBlackoutDate.objects.create(
+        season=season, date="2027-01-01", reason="Tarifa especial de alta demanda."
+    )
+    assert blackout in season.blackout_dates.all()
+    assert str(blackout.date) == "2027-01-01"
+
+
+@pytest.mark.django_db
+def test_season_blackout_date_rejects_duplicate_date_for_same_season():
+    season = make_season()
+    SeasonBlackoutDate.objects.create(season=season, date="2027-01-01")
+
+    with pytest.raises(IntegrityError):
+        SeasonBlackoutDate.objects.create(season=season, date="2027-01-01")

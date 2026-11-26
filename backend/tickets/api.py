@@ -8,7 +8,7 @@ from ninja import Router, Schema
 from ninja.errors import HttpError
 
 from tickets.auth import TerminalKeyAuth
-from tickets.models import OnlineTicket, TicketEvent
+from tickets.models import OnlineTicket, SeasonBlackoutDate, TicketEvent
 from tickets.qr import hash_code
 
 router = Router(auth=TerminalKeyAuth())
@@ -20,6 +20,23 @@ _NOT_REDEEMABLE_REASONS = {
     "CANCELLED": "Esta entrada esta anulada.",
     "REFUNDED_AFTER_REDEMPTION": "Esta entrada fue reembolsada tras el canje.",
 }
+
+_DEFAULT_BLACKOUT_REASON = "Esta entrada no es valida hoy."
+
+
+def _blackout_reason(season_id, on_date) -> Optional[str]:
+    """Returns the reason text if `on_date` is a blackout date for this
+    season (e.g. Jan 1, sold presencial at a higher price due to demand),
+    else None. One extra query per lookup/redeem; blackout dates are rare
+    and the table stays tiny, so this isn't worth caching."""
+    blackout = (
+        SeasonBlackoutDate.objects.filter(season_id=season_id, date=on_date)
+        .values_list("reason", flat=True)
+        .first()
+    )
+    if blackout is None:
+        return None
+    return blackout or _DEFAULT_BLACKOUT_REASON
 
 
 class OnlineTicketLineOut(Schema):
@@ -61,8 +78,14 @@ class OnlineTicketOut(Schema):
         # The stored status stays VALID until redemption or cancellation;
         # a ticket whose season has ended without being redeemed is still
         # VALID in the database but must no longer be presented as usable.
-        if obj.status == "VALID" and timezone.localdate() > obj.valid_until:
+        if obj.status != "VALID":
+            return None
+        today = timezone.localdate()
+        if today > obj.valid_until:
             return "fuera de temporada"
+        blackout = _blackout_reason(obj.season_id, today)
+        if blackout is not None:
+            return blackout
         return None
 
 
@@ -101,8 +124,13 @@ def redeem_ticket(request, code: str, payload: RedeemIn):
             )
             raise HttpError(409, reason)
 
-        if timezone.localdate() > ticket.valid_until:
+        today = timezone.localdate()
+        if today > ticket.valid_until:
             raise HttpError(409, "Esta entrada es de una temporada que ya terminó.")
+
+        blackout = _blackout_reason(ticket.season_id, today)
+        if blackout is not None:
+            raise HttpError(409, blackout)
 
         now = timezone.now()
         ticket.status = "REDEEMED"

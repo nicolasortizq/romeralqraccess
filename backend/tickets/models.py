@@ -34,6 +34,42 @@ class Season(models.Model):
         return self.name
 
 
+class SeasonBlackoutDate(models.Model):
+    """A specific day within a season's date range when an online ticket
+    is NOT redeemable, even though it's still "in season" per
+    Season.starts_on/ends_on.
+
+    Added for a real case: Rodrigo sells presencial entries at a higher
+    price on Jan 1 because of expected demand, and an online ticket
+    bought at the regular season price must not grant entry that day.
+    A separate model (not a hardcoded date, not a JSON field on Season)
+    so new dates can be added or removed from the Django admin without a
+    code change, the same way the plan's Global Constraints already
+    insist the season end date itself is data, not a constant."""
+
+    season = models.ForeignKey(
+        Season, on_delete=models.CASCADE, related_name="blackout_dates"
+    )
+    date = models.DateField()
+    reason = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Shown to the buyer in the ticket email and to the "
+        "cashier when a redeem is rejected for this date.",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["season", "date"], name="unique_season_blackout_date"
+            )
+        ]
+        ordering = ["date"]
+
+    def __str__(self):
+        return f"{self.season.name} - {self.date}"
+
+
 class Terminal(models.Model):
     """A gate terminal (cashier/access point) authorized to call the API
     via the X-Terminal-Key header. Only the hash of the key is stored."""

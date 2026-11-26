@@ -153,8 +153,12 @@ fecha y hora del canje y `redeemed_by` con el valor enviado tal cual
 
 - `404`: no existe una entrada con ese código.
 - `409`: la entrada ya no se puede canjear porque está `REDEEMED`,
-  `CANCELLED` o `REFUNDED_AFTER_REDEMPTION`. El cuerpo trae el detalle,
-  por ejemplo `{ "detail": "La entrada ya fue canjeada." }`.
+  `CANCELLED` o `REFUNDED_AFTER_REDEMPTION`, porque su temporada ya
+  terminó, o porque hoy es una fecha excluida de la temporada
+  (`SeasonBlackoutDate`, por ejemplo el 1 de enero, que se vende
+  presencial a una tarifa especial por la demanda). El cuerpo trae el
+  detalle, por ejemplo `{ "detail": "La entrada ya fue canjeada." }` o,
+  en una fecha excluida, el motivo configurado para esa fecha.
 
 ### `POST /api/v1/tickets/{code}/invoice`
 
