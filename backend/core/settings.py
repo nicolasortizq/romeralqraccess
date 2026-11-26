@@ -226,7 +226,14 @@ EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+# Port 587 uses STARTTLS (EMAIL_USE_TLS); port 465 uses implicit SSL
+# (EMAIL_USE_SSL) instead -- they are different protocols, Django's SMTP
+# backend rejects both being True at once, and EMAIL_HOST's mail provider
+# dictates which one its port expects, not a preference to pick freely.
 EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', default=True)
+EMAIL_USE_SSL = _env_bool('EMAIL_USE_SSL', default=False)
+if EMAIL_USE_SSL:
+    EMAIL_USE_TLS = False
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', '')
 
 
