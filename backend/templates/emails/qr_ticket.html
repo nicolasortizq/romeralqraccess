@@ -5,130 +5,203 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tu entrada - Valle del Romeral</title>
 </head>
-<body style="margin:0;padding:0;background-color:#EDF3F8;">
+<body style="margin:0;padding:0;background-color:#EDF1EF;">
 
 <!-- ================================================================
-     correo con QR enviado al comprador cuando WooCommerce notifica un
+     Correo con QR enviado al comprador cuando WooCommerce notifica un
      pedido pagado. Ported from the approved mock/frames/correo_qr.html
-     (Task 2). Layout de tablas, estilos en linea unicamente, compatible
-     con clientes de correo.
+     (v3: estilo recibo, inspirado en el comprobante de Puntoticket que
+     aprobó Nico, con los colores/logo de vallederomeral.cl). Layout de
+     tablas, estilos en linea unicamente, compatible con clientes de
+     correo. Degradado con respaldo de color solido para Outlook de
+     escritorio (que no soporta gradientes).
      ================================================================ -->
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EDF3F8;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#EDF1EF;">
   <tr>
     <td align="center" style="padding:24px 12px;">
 
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;border-radius:8px;overflow:hidden;">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFFFF;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(20,40,30,0.08);">
 
-        <!-- Encabezado -->
+        <!-- Barra superior: degradado verde -> azul, logo + wordmark -->
         <tr>
-          <td align="center" style="background-color:#102F52;padding:28px 20px;">
-            <div style="font-family:Arial, Helvetica, sans-serif;font-size:24px;font-weight:bold;color:#FFFFFF;letter-spacing:1px;">
-              VALLE DEL ROMERAL
-            </div>
-            <div style="font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#BED1E4;margin-top:4px;">
-              Centro Turístico
-            </div>
+          <td style="background-color:#1F6B3B;background-image:linear-gradient(90deg,#1F6B3B,#1E9FC7);padding:16px 24px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding-right:12px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#FFFFFF;border-radius:10px;width:48px;height:48px;">
+                    <tr>
+                      <td align="center" valign="middle" style="width:48px;height:48px;">
+                        <img src="cid:{{ logo_content_id }}"
+                             width="38" height="38" alt="Valle del Romeral"
+                             style="display:block;border:0;width:38px;height:38px;">
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+                <td valign="middle">
+                  <div style="font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#FFFFFF;letter-spacing:0.5px;">
+                    VALLE DEL ROMERAL
+                  </div>
+                  <div style="font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#E3F3E8;">
+                    Centro Turístico
+                  </div>
+                </td>
+              </tr>
+            </table>
           </td>
         </tr>
 
         <!-- Saludo -->
         <tr>
-          <td style="padding:28px 32px 8px 32px;font-family:Arial, Helvetica, sans-serif;">
-            <div style="font-size:19px;color:#17385C;font-weight:bold;">
-              ¡Tu entrada está lista, {{ buyer_first_name }}!
+          <td style="padding:24px 28px 4px 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+            <div style="font-size:18px;color:#233043;font-weight:600;">
+              Hola, {{ buyer_first_name }}
             </div>
-            <div style="font-size:14px;color:#41536B;line-height:20px;margin-top:8px;">
-              Gracias por tu compra. Guarda este correo: tu código QR es tu entrada al recinto.
+            <div style="font-size:14px;color:#55657A;margin-top:4px;">
+              Tu compra se confirmó con éxito. Esta es tu entrada.
             </div>
+          </td>
+        </tr>
+
+        <!-- Resumen de la compra -->
+        <tr>
+          <td style="padding:20px 28px 0 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+            <div style="font-size:14px;color:#233043;font-weight:700;padding-bottom:10px;border-bottom:1px dashed #D7DEE0;">
+              Resumen de la compra
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 28px 4px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1F6B3B;font-weight:600;width:42%;">Número de pedido</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">#{{ order_number }}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1F6B3B;font-weight:600;">Comprador</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">{{ buyer_name }}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1F6B3B;font-weight:600;">Correo</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">{{ buyer_email }}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1F6B3B;font-weight:600;">Fecha de compra</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">{{ purchased_at_label }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Resumen de la entrada -->
+        <tr>
+          <td style="padding:20px 28px 0 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+            <div style="font-size:14px;color:#233043;font-weight:700;padding-bottom:10px;border-bottom:1px dashed #D7DEE0;">
+              Resumen de tu entrada
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 28px 4px 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1572A1;font-weight:600;width:42%;">Lugar</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">Valle del Romeral, Centro Turístico</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1572A1;font-weight:600;">Cantidad</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">{{ people_label }}</td>
+              </tr>
+              <tr>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#1572A1;font-weight:600;">Vigencia</td>
+                <td style="padding:4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;">Toda la temporada, hasta el {{ valid_until_label }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Tabla de ítems -->
+        <tr>
+          <td style="padding:16px 28px 0 28px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+              <tr>
+                <td style="padding:8px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#8A99AC;font-weight:600;border-bottom:1px solid #E3E8EA;">Descripción</td>
+                <td align="center" style="padding:8px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#8A99AC;font-weight:600;border-bottom:1px solid #E3E8EA;">Cant.</td>
+                <td align="right" style="padding:8px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#8A99AC;font-weight:600;border-bottom:1px solid #E3E8EA;">Subtotal</td>
+              </tr>
+              {% for line in lines %}
+              <tr>
+                <td style="padding:9px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;background-color:#F7FAF8;">{{ line.product_name }}</td>
+                <td align="center" style="padding:9px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;background-color:#F7FAF8;">{{ line.quantity }}</td>
+                <td align="right" style="padding:9px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#425163;background-color:#F7FAF8;">{{ line.line_total_label }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;">
+              <tr>
+                <td align="right" style="padding:3px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:13px;color:#8A99AC;">TOTAL PAGADO</td>
+              </tr>
+              <tr>
+                <td align="right" style="padding:0 0 4px 0;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:20px;color:#1F6B3B;font-weight:700;">{{ total_paid_label }}</td>
+              </tr>
+            </table>
           </td>
         </tr>
 
         <!-- QR -->
         <tr>
-          <td align="center" style="padding:20px 32px 8px 32px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#F1F6FC;border-radius:8px;">
+          <td style="padding:20px 28px 0 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+            <div style="font-size:14px;color:#233043;font-weight:700;padding-bottom:10px;border-bottom:1px dashed #D7DEE0;">
+              Tu entrada digital
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:18px 28px 4px 28px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#F7FAF8;border-radius:8px;border:1px solid #E3E8EA;">
               <tr>
-                <td align="center" style="padding:24px;">
+                <td align="center" style="padding:20px;">
                   <img src="cid:{{ qr_content_id }}"
-                       width="260" height="260" alt="Código QR de tu entrada"
-                       style="display:block;border:0;width:260px;height:260px;background-color:#FFFFFF;border:1px solid #CBD9EA;">
+                       width="220" height="220" alt="Código QR de tu entrada"
+                       style="display:block;border:0;width:220px;height:220px;background-color:#FFFFFF;border:1px solid #1E9FC7;border-radius:6px;">
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-
-        <!-- Instrucción -->
         <tr>
-          <td align="center" style="padding:4px 32px 4px 32px;font-family:Arial, Helvetica, sans-serif;">
-            <div style="font-size:15px;color:#102F52;font-weight:bold;">
+          <td align="center" style="padding:12px 28px 4px 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+            <div style="font-size:14px;color:#1F6B3B;font-weight:700;">
               Muestra este código en el acceso.
             </div>
-          </td>
-        </tr>
-
-        <!-- Código en texto. Añadido a propósito sobre la maqueta aprobada
-             mock/frames/correo_qr.html: si el cliente de correo no muestra
-             la imagen, este texto es la única forma que le queda al
-             comprador de entrar (el acceso tiene ingreso manual del código
-             y la base de datos solo guarda su hash). -->
-        <tr>
-          <td align="center" style="padding:12px 32px 4px 32px;font-family:Arial, Helvetica, sans-serif;">
-            <div style="font-size:12px;color:#66778B;">
+            <div style="font-size:12px;color:#8A99AC;margin-top:10px;">
               Si no ves la imagen, dicta este código en el acceso:
             </div>
-            <div style="font-family:'Courier New', Courier, monospace;font-size:16px;font-weight:bold;color:#17385C;letter-spacing:1px;background-color:#F1F6FC;border:1px solid #CBD9EA;border-radius:6px;padding:10px 14px;margin-top:8px;word-break:break-all;">
+            <div style="font-family:'Courier New', Courier, monospace;font-size:15px;font-weight:bold;color:#233043;letter-spacing:1px;background-color:#F0F9FB;border:1px solid #BEE6F0;border-radius:6px;padding:9px 14px;margin-top:8px;word-break:break-all;">
               {{ ticket_code }}
             </div>
           </td>
         </tr>
 
-        <!-- Datos de la entrada -->
+        <!-- Recuerda -->
         <tr>
-          <td style="padding:24px 32px 8px 32px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-              <tr>
-                <td style="padding:10px 14px;background-color:#F1F6FC;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#66778B;width:50%;">
-                  Número de pedido
-                </td>
-                <td style="padding:10px 14px;background-color:#F1F6FC;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:14px;color:#17385C;font-weight:bold;text-align:right;">
-                  #{{ order_number }}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:10px 14px;background-color:#FFFFFF;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#66778B;">
-                  Cantidad de personas
-                </td>
-                <td style="padding:10px 14px;background-color:#FFFFFF;border-bottom:1px solid #DCE7F3;font-family:Arial, Helvetica, sans-serif;font-size:14px;color:#17385C;font-weight:bold;text-align:right;">
-                  {{ people_label }}
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:10px 14px;background-color:#F1F6FC;font-family:Arial, Helvetica, sans-serif;font-size:13px;color:#66778B;">
-                  Vigencia
-                </td>
-                <td style="padding:10px 14px;background-color:#F1F6FC;font-family:Arial, Helvetica, sans-serif;font-size:14px;color:#17385C;font-weight:bold;text-align:right;">
-                  Válida toda la temporada, hasta el {{ valid_until_label }}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-
-        <!-- Nota -->
-        <tr>
-          <td style="padding:16px 32px 28px 32px;font-family:Arial, Helvetica, sans-serif;">
-            <div style="font-size:12px;color:#8A4B00;background-color:#FFF0CF;border-radius:6px;padding:12px 14px;line-height:18px;">
-              Esta entrada se canjea una sola vez, para todas las personas indicadas. No es necesario imprimirla: basta con mostrar el código desde tu teléfono.
+          <td style="padding:22px 28px 28px 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;">
+            <div style="padding-top:16px;border-top:1px dashed #D7DEE0;font-size:12px;color:#1572A1;font-weight:700;margin-bottom:6px;">
+              Recuerda:
+            </div>
+            <div style="font-size:12px;color:#55657A;line-height:18px;">
+              Esta entrada se canjea una sola vez, para todas las personas indicadas. No es necesario imprimirla: basta con mostrar el código desde tu teléfono en el acceso.
             </div>
           </td>
         </tr>
 
         <!-- Pie -->
         <tr>
-          <td align="center" style="background-color:#F1F6FC;padding:16px 32px;font-family:Arial, Helvetica, sans-serif;font-size:11px;color:#8A99AC;">
-            Valle del Romeral · Este correo fue generado automáticamente, por favor no respondas a esta dirección.
+          <td align="center" style="background-color:#17382A;padding:18px 28px;font-family:'Poppins','Segoe UI',Arial,Helvetica,sans-serif;font-size:11px;color:#9FC7AD;">
+            Valle del Romeral · vallederomeral.cl<br>
+            Este correo fue generado automáticamente, por favor no respondas a esta dirección.
           </td>
         </tr>
 
